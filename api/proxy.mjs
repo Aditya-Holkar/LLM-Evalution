@@ -40,6 +40,10 @@ function parseBody(req) {
   })
 }
 
+function getKey(envKey) {
+  return process.env[envKey] || process.env[`VITE_${envKey}`]
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -54,7 +58,7 @@ export default async function handler(req, res) {
   const config = PROVIDER_CONFIG[provider]
   if (!config) return res.status(400).json({ error: `Unknown provider: ${provider}` })
 
-  const apiKey = process.env[config.envKey]
+  const apiKey = getKey(config.envKey)
   if (!apiKey) return res.status(500).json({ error: `Missing API key for ${config.envKey}` })
 
   const headers = { 'Content-Type': 'application/json' }
