@@ -8,7 +8,6 @@ export const MODELS = [
     tags: ['Fast', 'Cost-effective'],
     contextWindow: '16K',
     fallback: null,
-    fallbackKey: null,
   },
   {
     id: 'openai/gpt-4o',
@@ -17,7 +16,6 @@ export const MODELS = [
     tags: ['Versatile', 'Advanced'],
     contextWindow: '128K',
     fallback: null,
-    fallbackKey: null,
   },
   {
     id: 'google/gemini-2.0-flash-001',
@@ -26,7 +24,6 @@ export const MODELS = [
     tags: ['Fast', 'Versatile'],
     contextWindow: '1M',
     fallback: 'gemini',
-    fallbackKey: 'VITE_GEMINI_API_KEY',
   },
   {
     id: 'meta-llama/llama-3.3-70b-instruct',
@@ -35,7 +32,6 @@ export const MODELS = [
     tags: ['Powerful', 'Enterprise'],
     contextWindow: '128K',
     fallback: 'groq',
-    fallbackKey: 'VITE_GROQ_API_KEY',
   },
   {
     id: 'deepseek/deepseek-chat',
@@ -44,7 +40,6 @@ export const MODELS = [
     tags: ['Powerful', 'Cost-effective'],
     contextWindow: '64K',
     fallback: 'deepseek',
-    fallbackKey: 'VITE_DEEPSEEK_API_KEY',
   },
   {
     id: 'mistralai/mistral-7b-instruct',
@@ -53,7 +48,6 @@ export const MODELS = [
     tags: ['Fast', 'Efficient'],
     contextWindow: '8K',
     fallback: 'mistral',
-    fallbackKey: 'VITE_MISTRAL_API_KEY',
   },
   {
     id: 'qwen/qwen-2.5-72b-instruct',
@@ -62,7 +56,6 @@ export const MODELS = [
     tags: ['Powerful', 'Enterprise'],
     contextWindow: '128K',
     fallback: 'together',
-    fallbackKey: 'VITE_TOGETHER_API_KEY',
   },
 ]
 
