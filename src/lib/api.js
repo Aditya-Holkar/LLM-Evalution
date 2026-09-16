@@ -31,17 +31,6 @@ function parseStandardResponse(data) {
 
 const FALLBACK_MAP = {
   groq: (modelId, prompt) => proxyFetch('groq', modelId, prompt),
-  deepseek: (modelId, prompt) => proxyFetch('deepseek', modelId, prompt),
-  mistral: (modelId, prompt) => proxyFetch('mistral', modelId, prompt),
-  together: (modelId, prompt) => proxyFetch('together', modelId, prompt),
-}
-
-async function callGeminiFallback(model, prompt) {
-  const start = performance.now()
-  const data = await proxyFetch('gemini', model.id, prompt)
-  const elapsed = performance.now() - start
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-  return { text, inputTokens: 0, outputTokens: 0, latency: elapsed, fallback: true }
 }
 
 export async function callModel(model, prompt) {
@@ -54,15 +43,18 @@ export async function callModel(model, prompt) {
     const { text, inputTokens, outputTokens } = parseOpenRouterResponse(data)
     return { text, inputTokens, outputTokens, latency: elapsed, fallback: false }
   } catch (err) {
-    if (model.fallback === 'gemini') {
-      return callGeminiFallback(model, prompt)
-    }
     const fallbackFn = FALLBACK_MAP[model.fallback]
     if (!fallbackFn) throw err
-    const elapsed = performance.now() - start
+    const fallbackStart = performance.now()
     const data = await fallbackFn(modelId, prompt)
     const { text, inputTokens, outputTokens } = parseStandardResponse(data)
-    return { text, inputTokens, outputTokens, latency: elapsed, fallback: true }
+    return {
+      text,
+      inputTokens,
+      outputTokens,
+      latency: performance.now() - fallbackStart,
+      fallback: true,
+    }
   }
 }
 
@@ -72,7 +64,7 @@ export async function judgeResponses(responses) {
 ${responses.map((r, i) => `Response ${i + 1} (${r.modelName}):\n${r.text.slice(0, 1000)}`).join('\n\n')}`
 
   try {
-    const data = await proxyFetch('openrouter', 'openai/gpt-4o', prompt)
+    const data = await proxyFetch('openrouter', 'openai/gpt-6-astra', prompt)
     const text = data.choices?.[0]?.message?.content || ''
     const jsonMatch = text.match(/\[[\s\S]*\]/)
     if (jsonMatch) return JSON.parse(jsonMatch[0])
