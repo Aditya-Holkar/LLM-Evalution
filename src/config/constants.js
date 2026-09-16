@@ -1,49 +1,49 @@
 export const MAX_FREE_TRIES = 3
 
-// Focused comparison set: latest + second-latest model family from
-// OpenAI, Anthropic (Claude), and models currently hosted by Groq.
+// Focused comparison set: two recent model choices from OpenAI, Claude, and Groq.
+// OpenAI/Claude can fall back to Groq when OpenRouter credits are unavailable.
 export const MODELS = [
   {
     id: 'openai/gpt-6-astra',
     name: 'GPT-6 Astra',
     provider: 'OpenAI',
-    description: 'OpenAI flagship model for the hardest reasoning, coding, and end-to-end work.',
+    description: 'OpenAI flagship model for demanding reasoning, coding, and end-to-end work.',
     tags: ['Latest', 'Flagship', 'Reasoning'],
     contextWindow: '1.05M',
-    fallback: null,
+    fallback: 'groq',
   },
   {
     id: 'openai/gpt-5.6-sol',
     name: 'GPT-5.6 Sol',
     provider: 'OpenAI',
-    description: 'OpenAI flagship model for complex professional work, coding, and agentic workflows.',
+    description: 'OpenAI model for complex professional work, coding, and agentic workflows.',
     tags: ['2nd Latest', 'Flagship', 'Coding'],
     contextWindow: '1.05M',
-    fallback: null,
+    fallback: 'groq',
   },
   {
     id: 'anthropic/claude-fable-5.1',
     name: 'Claude Fable 5.1',
     provider: 'Claude',
-    description: 'Anthropic\'s latest generally available model for coding, knowledge work, and long-running agentic tasks.',
+    description: 'Anthropic model for coding, knowledge work, and long-running agentic tasks.',
     tags: ['Latest', 'Coding', 'Knowledge Work'],
     contextWindow: '1M',
-    fallback: null,
+    fallback: 'groq',
   },
   {
     id: 'anthropic/claude-opus-5',
     name: 'Claude Opus 5',
     provider: 'Claude',
-    description: 'Anthropic\'s second-newest major Claude model for demanding reasoning and professional workloads.',
+    description: 'Anthropic model for demanding reasoning and professional workloads.',
     tags: ['2nd Latest', 'Reasoning', 'Premium'],
     contextWindow: '1M',
-    fallback: null,
+    fallback: 'groq',
   },
   {
     id: 'openai/gpt-oss-120b',
     name: 'GPT-OSS 120B',
     provider: 'Groq',
-    description: 'Open-weight 120B model served through Groq for very fast inference and reasoning workloads.',
+    description: 'Open-weight 120B model served through Groq for fast inference and reasoning workloads.',
     tags: ['Latest', 'Fast', 'Open-weight'],
     contextWindow: '131K',
     fallback: 'groq',
@@ -59,7 +59,6 @@ export const MODELS = [
   },
 ]
 
-// OpenRouter prices, represented as USD per 1K tokens for the calculator.
 export const PRICING = {
   'openai/gpt-6-astra': { input: 0.01, output: 0.05 },
   'openai/gpt-5.6-sol': { input: 0.002, output: 0.01 },
@@ -69,7 +68,8 @@ export const PRICING = {
   'openai/gpt-oss-20b': { input: 0.000075, output: 0.0003 },
 }
 
-export const JUDGE_MODEL = 'openai/gpt-6-astra'
+// Use Groq for judging so the comparison page can still score responses without OpenRouter credits.
+export const JUDGE_MODEL = 'openai/gpt-oss-20b'
 
 export const PASSWORD_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
 
