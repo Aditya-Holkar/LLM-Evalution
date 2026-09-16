@@ -1,16 +1,88 @@
-# React + Vite
+# LLM Evalution — AI Model Comparison Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React + Vite dashboard for comparing LLM responses side-by-side. Select multiple models, run the same prompt across them, inspect quality scores and runtime metrics, and estimate API costs.
 
-Currently, two official plugins are available:
+## What it does
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 🔎 **Searchable model catalog** — filter models by provider and quickly select a comparison set.
+- ⚔️ **Side-by-side evaluation** — send one prompt to multiple models and inspect their responses together.
+- 🧠 **Quality judging** — compares successful responses on accuracy, clarity, and completeness.
+- ⚡ **Performance metrics** — latency, throughput, token counts, output speed, and response size.
+- 💰 **Pricing calculator** — estimate input/output spend for a chosen model and token volume.
+- 📊 **Comparison summary** — highlights quality score, fastest response, lowest measured cost, and highest output throughput.
+- 📈 **Charts and exports** — visualize evaluation results and export the comparison data.
+- 🌓 **Responsive UI** — designed for desktop and mobile screens.
+- 🔐 **API-key proxy** — provider credentials stay server-side through the `/api/proxy` endpoint.
 
-## React Compiler
+## Models
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The current catalog includes OpenAI, Google, Meta, DeepSeek, Mistral AI, and Qwen models. Model metadata and configured price estimates live in `src/config/constants.js`, while requests are routed through the configured provider adapters in `api/proxy.mjs`.
 
-## Expanding the ESLint configuration
+> Pricing values in the UI are project estimates. Provider pricing can change, so verify current provider rates before production budgeting.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Tech stack
+
+- React 19
+- Vite
+- Tailwind CSS
+- Recharts
+- Lucide React
+- Radix UI
+- OpenRouter with provider fallbacks
+
+## Local development
+
+### Prerequisites
+
+- Node.js 18+
+- API keys for the providers you want to use
+
+### Install
+
+```bash
+npm install
+```
+
+### Run
+
+```bash
+npm run dev
+```
+
+### Build
+
+```bash
+npm run build
+```
+
+### Environment variables
+
+Configure the provider keys used by `api/proxy.mjs`, for example:
+
+```text
+OPENROUTER_API_KEY=...
+GROQ_API_KEY=...
+DEEPSEEK_API_KEY=...
+MISTRAL_API_KEY=...
+TOGETHER_API_KEY=...
+GEMINI_API_KEY=...
+```
+
+## Project structure
+
+```text
+api/                 Provider proxy endpoint
+src/components/      Comparison dashboard UI
+src/config/          Models, metrics and pricing
+src/context/         Application state
+src/hooks/            Evaluation workflow
+src/lib/              Provider API and pricing helpers
+```
+
+## Inspiration
+
+The product direction is inspired by the idea of a unified AI model comparison site: searchable model discovery, side-by-side comparisons, pricing visibility, and practical decision-support metrics. This repository implements its own React/Vite architecture and evaluation workflow rather than copying the reference project's source code.
+
+## License
+
+This project remains under the license and terms currently present in this repository.
