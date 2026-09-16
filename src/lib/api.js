@@ -29,8 +29,10 @@ function parseStandardResponse(data) {
   }
 }
 
+// Groq is the no-credit fallback for the comparison UI. The selected OpenAI/Claude
+// model remains the label being tested, while the fallback is clearly marked in results.
 const FALLBACK_MAP = {
-  groq: (modelId, prompt) => proxyFetch('groq', modelId, prompt),
+  groq: (prompt) => proxyFetch('groq', 'openai/gpt-oss-20b', prompt),
 }
 
 export async function callModel(model, prompt) {
@@ -46,7 +48,7 @@ export async function callModel(model, prompt) {
     const fallbackFn = FALLBACK_MAP[model.fallback]
     if (!fallbackFn) throw err
     const fallbackStart = performance.now()
-    const data = await fallbackFn(modelId, prompt)
+    const data = await fallbackFn(prompt)
     const { text, inputTokens, outputTokens } = parseStandardResponse(data)
     return {
       text,
@@ -59,12 +61,13 @@ export async function callModel(model, prompt) {
 }
 
 export async function judgeResponses(responses) {
-  const prompt = `Rate the following LLM responses on a scale of 1-10 for accuracy, clarity, and completeness. Return a JSON array with objects containing "model", "accuracy", "clarity", "completeness".
+  const prompt = `Rate the following LLM responses on a scale of 1-10 for accuracy, clarity, and completeness. Return a JSON array with objects containing "model", "accuracy", "clarity", "completeness". Return JSON only.
 
 ${responses.map((r, i) => `Response ${i + 1} (${r.modelName}):\n${r.text.slice(0, 1000)}`).join('\n\n')}`
 
   try {
-    const data = await proxyFetch('openrouter', 'openai/gpt-6-astra', prompt)
+    // Use Groq for judging so evaluation itself does not require OpenRouter credits.
+    const data = await proxyFetch('groq', 'openai/gpt-oss-20b', prompt)
     const text = data.choices?.[0]?.message?.content || ''
     const jsonMatch = text.match(/\[[\s\S]*\]/)
     if (jsonMatch) return JSON.parse(jsonMatch[0])
