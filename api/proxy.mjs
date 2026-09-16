@@ -6,7 +6,7 @@ const PROVIDER_CONFIG = {
   groq: {
     url: 'https://api.groq.com/openai/v1/chat/completions',
     envKey: 'GROQ_API_KEY',
-    modelKey: ({ model }) => model.replace('meta-llama/', ''),
+    modelKey: ({ model }) => model.replace('groq/', ''),
   },
   deepseek: {
     url: 'https://api.deepseek.com/v1/chat/completions',
@@ -44,6 +44,30 @@ function getKey(envKey) {
   return process.env[envKey] || process.env[`VITE_${envKey}`]
 }
 
+function isCreditError(data) {
+  const message = data?.error?.message || ''
+  return /more credits|fewer max_tokens|can only afford/i.test(message)
+}
+
+async function callOpenRouter({ apiKey, model, prompt, maxTokens }) {
+  const response = await fetch(PROVIDER_CONFIG.openrouter.url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      'HTTP-Referer': process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '',
+      'X-Title': 'LLM Evalution',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: maxTokens,
+    }),
+  })
+  const data = await response.json()
+  return { response, data }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -61,6 +85,32 @@ export default async function handler(req, res) {
   const apiKey = getKey(config.envKey)
   if (!apiKey) return res.status(500).json({ error: `Missing API key for ${config.envKey}` })
 
+  // OpenRouter paid models must not fail just because the account has limited credits.
+  // If the requested output budget is too expensive, progressively reduce it so the
+  // model can still return a useful short response when the account can afford one.
+  if (provider === 'openrouter') {
+    const requestedMaxTokens = 2048
+    const budgets = [requestedMaxTokens, 1024, 512, 256, 128]
+
+    try {
+      for (const maxTokens of budgets) {
+        const { response, data } = await callOpenRouter({ apiKey, model, prompt, maxTokens })
+        if (response.ok) return res.status(200).json(data)
+
+        if (!isCreditError(data)) {
+          return res.status(response.status).json({ error: data.error?.message || response.statusText, provider })
+        }
+      }
+
+      return res.status(402).json({
+        error: 'OpenRouter has insufficient credits for this model. Please use the free fallback or add OpenRouter credits.',
+        provider,
+      })
+    } catch (error) {
+      return res.status(502).json({ error: error.message, provider })
+    }
+  }
+
   const headers = { 'Content-Type': 'application/json' }
   let url = config.url
   let body
@@ -69,19 +119,15 @@ export default async function handler(req, res) {
     url = `${config.url}?key=${apiKey}`
     body = JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
   } else {
-    headers['Authorization'] = `Bearer ${apiKey}`
+    headers.Authorization = `Bearer ${apiKey}`
     const modelId = config.modelKey
       ? (typeof config.modelKey === 'function' ? config.modelKey({ model }) : config.modelKey)
       : model
     body = JSON.stringify({
       model: modelId,
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 2048,
+      max_tokens: 1024,
     })
-  }
-
-  if (provider === 'openrouter') {
-    headers['HTTP-Referer'] = req.headers.origin || req.headers.referer || ''
   }
 
   try {
