@@ -22,7 +22,8 @@ function saveState(state) {
 const savedState = loadState()
 const validMetrics = new Set(METRIC_IDS)
 const migratedMetrics = Array.isArray(savedState.selectedMetrics) ? savedState.selectedMetrics.filter((id) => validMetrics.has(id)) : METRIC_IDS
-const migratedModels = Array.isArray(savedState.selectedModels) && savedState.selectedModels.length ? savedState.selectedModels : DEFAULT_MODELS
+// Start the redesigned experience with three complementary models. User changes are persisted after that.
+const migratedModels = DEFAULT_MODELS
 
 const initialState = { selectedModels: migratedModels, results: [], isEvaluating: false, selectedMetrics: migratedMetrics.length ? migratedMetrics : METRIC_IDS, ...savedState }
 initialState.selectedMetrics = migratedMetrics.length ? migratedMetrics : METRIC_IDS
