@@ -17,19 +17,8 @@ function parseResponse(data) {
 export async function callModel(model, prompt) {
   const start = performance.now()
   const provider = model.provider === 'Groq' ? 'groq' : 'openrouter'
-  try {
-    const data = await proxyFetch(provider, model.id, prompt, { maxTokens: 1536, reasoningEffort: 'low' })
-    return { ...parseResponse(data), latency: performance.now() - start, fallback: false }
-  } catch (primaryError) {
-    if (model.provider === 'Groq') throw primaryError
-    const fallbackStart = performance.now()
-    try {
-      const data = await proxyFetch('groq', 'openai/gpt-oss-120b', prompt, { maxTokens: 1536, reasoningEffort: 'low' })
-      return { ...parseResponse(data), latency: performance.now() - fallbackStart, fallback: true, fallbackModel: 'GPT-OSS 120B', fallbackReason: primaryError.message }
-    } catch (fallbackError) {
-      throw new Error(`${model.name} failed: ${primaryError.message}. Groq fallback failed: ${fallbackError.message}`)
-    }
-  }
+  const data = await proxyFetch(provider, model.id, prompt, { maxTokens: 1536, reasoningEffort: 'low' })
+  return { ...parseResponse(data), latency: performance.now() - start, fallback: false }
 }
 
 export async function judgeResponses(responses) {
