@@ -22,17 +22,17 @@ export default function App() {
           <div className="max-w-7xl mx-auto p-3 sm:p-5 space-y-4 sm:space-y-5">
             <HeaderBar />
             <ModelCatalog />
-            <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
+            <div className="grid grid-cols-1 xl:grid-cols-[1.7fr_1fr] gap-4 items-start">
               <PromptInput />
               <MetricsSelector />
             </div>
             <ResultsGrid />
             <UseCaseRankings />
-            <ComparisonSummary />
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-4 items-start">
+              <ComparisonSummary />
               <PricingCalculator />
-              <ChartsPanel />
             </div>
+            <ChartsPanel />
             <ExportPanel />
             <Footer />
           </div>
