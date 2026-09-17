@@ -3,19 +3,31 @@ import { JUDGE_MODEL } from '#/config/constants'
 async function proxyFetch(provider, model, prompt, options = {}) {
   const res = await fetch('/api/proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider, model, prompt, maxTokens: options.maxTokens || 1024, reasoningEffort: options.reasoningEffort || 'low', jsonMode: !!options.jsonMode }) })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(`${provider}: ${data.error || res.statusText}`)
+  if (!res.ok) {
+    const detail = data.detail ? ` (${data.detail})` : ''
+    throw new Error(`${provider}: ${data.error || res.statusText}${detail}`)
+  }
   return data
 }
 
 function parseResponse(data) {
-  const choice = data.choices?.[0]
-  const text = choice?.message?.content || ''
+  const openAIText = data.choices?.[0]?.message?.content
+  const anthropicText = Array.isArray(data.content)
+    ? data.content.filter((item) => item?.type === 'text').map((item) => item.text).join('\n')
+    : ''
+  const text = typeof openAIText === 'string' ? openAIText : anthropicText
   if (!text.trim()) throw new Error('Model returned an empty response')
-  return { text, inputTokens: data.usage?.prompt_tokens || 0, outputTokens: data.usage?.completion_tokens || 0 }
+  return {
+    text,
+    inputTokens: data.usage?.prompt_tokens || data.usage?.input_tokens || 0,
+    outputTokens: data.usage?.completion_tokens || data.usage?.output_tokens || 0,
+  }
 }
 
 export async function callModel(model, prompt) {
   const start = performance.now()
+  // Claude models use the OpenRouter route in the UI. The server proxy can use
+  // a native Anthropic key when configured, but it always calls the exact Claude model.
   const provider = model.provider === 'Groq' ? 'groq' : 'openrouter'
   const data = await proxyFetch(provider, model.id, prompt, { maxTokens: 1536, reasoningEffort: 'low' })
   return { ...parseResponse(data), latency: performance.now() - start, fallback: false }
