@@ -4,12 +4,13 @@ import HeaderBar from '#/components/HeaderBar'
 import ModelCatalog from '#/components/ModelCatalog'
 import PromptInput from '#/components/PromptInput'
 import MetricsSelector from '#/components/MetricsSelector'
+import ResultsGrid from '#/components/ResultsGrid'
+import UseCaseRankings from '#/components/UseCaseRankings'
 import ComparisonSummary from '#/components/ComparisonSummary'
 import PricingCalculator from '#/components/PricingCalculator'
 import ChartsPanel from '#/components/ChartsPanel'
 import ExportPanel from '#/components/ExportPanel'
 import Footer from '#/components/Footer'
-import ResultsGrid from '#/components/ResultsGrid'
 import PasswordGate from '#/components/PasswordGate'
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
               <MetricsSelector />
             </div>
             <ResultsGrid />
+            <UseCaseRankings />
             <ComparisonSummary />
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               <PricingCalculator />
