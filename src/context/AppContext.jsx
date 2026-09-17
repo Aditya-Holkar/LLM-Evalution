@@ -3,27 +3,30 @@ import { METRIC_IDS } from '../config/constants'
 
 const AppContext = createContext(null)
 const STORAGE_KEY = 'llm-eval-state'
+const DEFAULT_MODELS = ['openai/gpt-5.6-sol', 'anthropic/claude-fable-5.1', 'openai/gpt-oss-120b']
 
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch {}
-  return { triesUsed: 0, isUnlocked: false, manualVotes: {}, selectedMetrics: METRIC_IDS }
+  return { triesUsed: 0, isUnlocked: false, manualVotes: {}, selectedMetrics: METRIC_IDS, selectedModels: DEFAULT_MODELS }
 }
 
 function saveState(state) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ triesUsed: state.triesUsed, isUnlocked: state.isUnlocked, manualVotes: state.manualVotes, selectedMetrics: state.selectedMetrics }))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ triesUsed: state.triesUsed, isUnlocked: state.isUnlocked, manualVotes: state.manualVotes, selectedMetrics: state.selectedMetrics, selectedModels: state.selectedModels }))
   } catch {}
 }
 
 const savedState = loadState()
 const validMetrics = new Set(METRIC_IDS)
 const migratedMetrics = Array.isArray(savedState.selectedMetrics) ? savedState.selectedMetrics.filter((id) => validMetrics.has(id)) : METRIC_IDS
+const migratedModels = Array.isArray(savedState.selectedModels) && savedState.selectedModels.length ? savedState.selectedModels : DEFAULT_MODELS
 
-const initialState = { selectedModels: [], results: [], isEvaluating: false, selectedMetrics: migratedMetrics.length ? migratedMetrics : METRIC_IDS, ...savedState }
+const initialState = { selectedModels: migratedModels, results: [], isEvaluating: false, selectedMetrics: migratedMetrics.length ? migratedMetrics : METRIC_IDS, ...savedState }
 initialState.selectedMetrics = migratedMetrics.length ? migratedMetrics : METRIC_IDS
+initialState.selectedModels = migratedModels
 
 function reducer(state, action) {
   switch (action.type) {
@@ -44,7 +47,7 @@ function reducer(state, action) {
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState)
-  useEffect(() => { saveState(state) }, [state.triesUsed, state.isUnlocked, state.manualVotes, state.selectedMetrics])
+  useEffect(() => { saveState(state) }, [state.triesUsed, state.isUnlocked, state.manualVotes, state.selectedMetrics, state.selectedModels])
   const selectModel = useCallback((id) => dispatch({ type: 'SELECT_MODEL', id }), [])
   const startEvaluation = useCallback(() => dispatch({ type: 'START_EVALUATION' }), [])
   const setResults = useCallback((results) => dispatch({ type: 'SET_RESULTS', payload: results }), [])
