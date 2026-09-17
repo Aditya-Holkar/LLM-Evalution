@@ -1,58 +1,76 @@
+import { JUDGE_MODEL } from '#/config/constants'
+
 async function proxyFetch(provider, model, prompt) {
   const res = await fetch('/api/proxy', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ provider, model, prompt }),
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(`${provider}: ${err.error || res.statusText}`)
-  }
-  return res.json()
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(`${provider}: ${data.error || res.statusText}`)
+  return data
 }
 
-function parseOpenRouterResponse(data) {
+function parseResponse(data) {
   const choice = data.choices?.[0]
-  return { text: choice?.message?.content || '', inputTokens: data.usage?.prompt_tokens || 0, outputTokens: data.usage?.completion_tokens || 0 }
+  const text = choice?.message?.content || ''
+  if (!text) throw new Error('Model returned an empty response')
+  return { text, inputTokens: data.usage?.prompt_tokens || 0, outputTokens: data.usage?.completion_tokens || 0 }
 }
-
-function parseStandardResponse(data) {
-  const choice = data.choices?.[0]
-  return { text: choice?.message?.content || '', inputTokens: data.usage?.prompt_tokens || 0, outputTokens: data.usage?.completion_tokens || 0 }
-}
-
-const FALLBACK_MAP = { groq: (modelId, prompt) => proxyFetch('groq', modelId, prompt) }
 
 export async function callModel(model, prompt) {
   const start = performance.now()
   try {
+    if (model.provider === 'Groq') {
+      const data = await proxyFetch('groq', model.id, prompt)
+      const parsed = parseResponse(data)
+      return { ...parsed, latency: performance.now() - start, fallback: false }
+    }
+
     const data = await proxyFetch('openrouter', model.id, prompt)
-    const elapsed = performance.now() - start
-    const { text, inputTokens, outputTokens } = parseOpenRouterResponse(data)
-    return { text, inputTokens, outputTokens, latency: elapsed, fallback: false }
-  } catch (err) {
-    const fallbackFn = FALLBACK_MAP[model.fallback]
-    if (!fallbackFn) throw err
+    const parsed = parseResponse(data)
+    return { ...parsed, latency: performance.now() - start, fallback: false }
+  } catch (primaryError) {
+    if (model.fallback !== 'groq') throw primaryError
+
     const fallbackStart = performance.now()
-    const data = await fallbackFn('openai/gpt-oss-20b', prompt)
-    const { text, inputTokens, outputTokens } = parseStandardResponse(data)
-    return { text, inputTokens, outputTokens, latency: performance.now() - fallbackStart, fallback: true, fallbackModel: 'GPT-OSS 20B' }
+    try {
+      const data = await proxyFetch('groq', 'openai/gpt-oss-120b', prompt)
+      const parsed = parseResponse(data)
+      return {
+        ...parsed,
+        latency: performance.now() - fallbackStart,
+        fallback: true,
+        fallbackModel: 'GPT-OSS 120B',
+        fallbackReason: primaryError.message,
+      }
+    } catch (fallbackError) {
+      throw new Error(`${model.name} failed: ${primaryError.message}. Groq fallback also failed: ${fallbackError.message}`)
+    }
   }
 }
 
 export async function judgeResponses(responses) {
-  const prompt = `Evaluate each response for the user's current prompt. Score each model from 1-10 in these use cases: coding, reasoning, research, finance, accounting. Also score accuracy, clarity, completeness. Base scores only on the response quality and relevance to the prompt. Return ONLY valid JSON array. Each object must contain model, accuracy, clarity, completeness, coding, reasoning, research, finance, accounting.
+  const prompt = `You are the audit evaluator for an AI model comparison dashboard.
+Evaluate ONLY the responses supplied below for the user's prompt.
+Score every model from 1-10 on: coding, reasoning, research, finance, accounting, accuracy, clarity, completeness.
+Do not use outside model reputation. Judge the actual response quality and relevance.
+Return ONLY a JSON array. Each object must contain exactly: model, accuracy, clarity, completeness, coding, reasoning, research, finance, accounting.
 
-${responses.map((r, i) => `Response ${i + 1} (${r.modelName}):\n${r.text.slice(0, 1800)}`).join('\n\n')}`
+${responses.map((r, i) => `Response ${i + 1} (${r.modelName}):\n${r.text.slice(0, 5000)}`).join('\n\n')}`
 
   try {
-    const data = await proxyFetch('groq', 'openai/gpt-oss-20b', prompt)
+    const data = await proxyFetch('groq', JUDGE_MODEL, prompt)
     const text = data.choices?.[0]?.message?.content || ''
-    const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (jsonMatch) return JSON.parse(jsonMatch[0])
-  } catch {}
-
-  return responses.map((r) => ({
-    model: r.modelName, accuracy: 0, clarity: 0, completeness: 0,
-    coding: 0, reasoning: 0, research: 0, finance: 0, accounting: 0,
-  }))
+    const match = text.match(/\[[\s\S]*\]/)
+    if (!match) throw new Error('Audit model did not return JSON')
+    const scores = JSON.parse(match[0])
+    if (!Array.isArray(scores)) throw new Error('Invalid audit score format')
+    return scores
+  } catch {
+    return responses.map((r) => ({
+      model: r.modelName, accuracy: 0, clarity: 0, completeness: 0,
+      coding: 0, reasoning: 0, research: 0, finance: 0, accounting: 0,
+    }))
+  }
 }
