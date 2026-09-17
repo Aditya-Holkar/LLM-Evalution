@@ -2,6 +2,7 @@ import { ThemeProvider } from '#/context/ThemeContext'
 import { AppProvider } from '#/context/AppContext'
 import HeaderBar from '#/components/HeaderBar'
 import ModelCatalog from '#/components/ModelCatalog'
+import ModelManagementGuide from '#/components/ModelManagementGuide'
 import PromptInput from '#/components/PromptInput'
 import MetricsSelector from '#/components/MetricsSelector'
 import ResultsGrid from '#/components/ResultsGrid'
@@ -22,6 +23,7 @@ export default function App() {
           <div className="max-w-7xl mx-auto p-3 sm:p-5 space-y-4 sm:space-y-5">
             <HeaderBar />
             <ModelCatalog />
+            <ModelManagementGuide />
             <div className="grid grid-cols-1 xl:grid-cols-[1.7fr_1fr] gap-4 items-start">
               <PromptInput />
               <MetricsSelector />
