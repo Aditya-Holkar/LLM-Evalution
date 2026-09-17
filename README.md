@@ -16,7 +16,13 @@ A React + Vite dashboard for comparing LLM responses side-by-side. Select multip
 
 ## Models
 
-The current catalog includes OpenAI, Google, Meta, DeepSeek, Mistral AI, and Qwen models. Model metadata and configured price estimates live in `src/config/constants.js`, while requests are routed through the configured provider adapters in `api/proxy.mjs`.
+The current catalog includes OpenAI, Claude, and Groq comparison models. Model metadata and configured price estimates live in `src/config/constants.js`, while requests are routed through the configured provider adapters in `api/proxy.mjs`.
+
+### Claude Fable 5.1
+
+The dashboard uses the real OpenRouter model ID `anthropic/claude-fable-5.1`. If `ANTHROPIC_API_KEY` is configured on the server, Claude requests can use Anthropic's native Messages API with the native model ID `claude-fable-5-1`; otherwise the exact same Fable 5.1 model is requested through OpenRouter. There is no GPT/Groq model substitution.
+
+OpenRouter can route the same Fable model across its available providers. If the OpenRouter account has insufficient credits and no Anthropic key is configured, the dashboard reports that exact Fable error instead of silently returning another model's answer.
 
 > Pricing values in the UI are project estimates. Provider pricing can change, so verify current provider rates before production budgeting.
 
@@ -28,7 +34,7 @@ The current catalog includes OpenAI, Google, Meta, DeepSeek, Mistral AI, and Qwe
 - Recharts
 - Lucide React
 - Radix UI
-- OpenRouter with provider fallbacks
+- OpenRouter / Anthropic / Groq provider APIs
 
 ## Local development
 
@@ -57,15 +63,12 @@ npm run build
 
 ### Environment variables
 
-Configure the provider keys used by `api/proxy.mjs`, for example:
+Configure the provider keys used by `api/proxy.mjs`. For Claude Fable 5.1, either `OPENROUTER_API_KEY` or `ANTHROPIC_API_KEY` is required; if both are present, the native Anthropic key is used for Claude requests.
 
 ```text
 OPENROUTER_API_KEY=...
+ANTHROPIC_API_KEY=...
 GROQ_API_KEY=...
-DEEPSEEK_API_KEY=...
-MISTRAL_API_KEY=...
-TOGETHER_API_KEY=...
-GEMINI_API_KEY=...
 ```
 
 ## Project structure
@@ -75,7 +78,7 @@ api/                 Provider proxy endpoint
 src/components/      Comparison dashboard UI
 src/config/          Models, metrics and pricing
 src/context/         Application state
-src/hooks/            Evaluation workflow
+src/hooks/           Evaluation workflow
 src/lib/              Provider API and pricing helpers
 ```
 
