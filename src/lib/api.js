@@ -1,7 +1,7 @@
 import { JUDGE_MODEL } from '#/config/constants'
 
 async function proxyFetch(provider, model, prompt, options = {}) {
-  const res = await fetch('/api/proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider, model, prompt, maxTokens: options.maxTokens || 1024, reasoningEffort: options.reasoningEffort || 'low' }) })
+  const res = await fetch('/api/proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider, model, prompt, maxTokens: options.maxTokens || 1024, reasoningEffort: options.reasoningEffort || 'low', jsonMode: !!options.jsonMode }) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(`${provider}: ${data.error || res.statusText}`)
   return data
@@ -37,18 +37,16 @@ export async function judgeResponses(responses) {
 Evaluate ONLY the responses supplied below for the user's prompt.
 Score every response from 1-10 on coding, reasoning, research, finance, accounting, accuracy, clarity, completeness.
 Judge the actual response: correctness, relevance, instruction-following, useful detail, and technical quality. Do not score based on the model's reputation.
-Return ONLY a JSON array. Each object must contain exactly: model, accuracy, clarity, completeness, coding, reasoning, research, finance, accounting.
+Return a JSON object with one property named scores. scores must be an array of objects, each containing exactly: model, accuracy, clarity, completeness, coding, reasoning, research, finance, accounting.
 
 ${responses.map((r, i) => `Response ${i + 1} (${r.modelName}):\n${r.text.slice(0, 3500)}`).join('\n\n')}`
 
   try {
-    const data = await proxyFetch('groq', JUDGE_MODEL, prompt, { maxTokens: 900, reasoningEffort: 'low' })
-    const text = data.choices?.[0]?.message?.content || ''
-    const match = text.match(/\[[\s\S]*\]/)
-    if (!match) throw new Error('Audit model did not return JSON')
-    const scores = JSON.parse(match[0])
-    if (!Array.isArray(scores)) throw new Error('Invalid audit score format')
-    return scores
+    const data = await proxyFetch('groq', JUDGE_MODEL, prompt, { maxTokens: 900, reasoningEffort: 'low', jsonMode: true })
+    const text = data.choices?.[0]?.message?.content || '{}'
+    const parsed = JSON.parse(text)
+    if (!Array.isArray(parsed.scores)) throw new Error('Invalid audit score format')
+    return parsed.scores
   } catch (error) {
     console.warn('Audit failed:', error)
     return []
