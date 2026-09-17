@@ -4,58 +4,34 @@ export const MAX_FREE_TRIES = 3
 // OpenAI/Claude can fall back to Groq when OpenRouter credits are unavailable.
 export const MODELS = [
   {
-    id: 'openai/gpt-6-astra',
-    name: 'GPT-6 Astra',
-    provider: 'OpenAI',
+    id: 'openai/gpt-6-astra', name: 'GPT-6 Astra', provider: 'OpenAI',
     description: 'OpenAI flagship model for demanding reasoning, coding, and end-to-end work.',
-    tags: ['Latest', 'Flagship', 'Reasoning'],
-    contextWindow: '1.05M',
-    fallback: 'groq',
+    tags: ['Latest', 'Flagship', 'Reasoning'], contextWindow: '1.05M', fallback: 'groq',
   },
   {
-    id: 'openai/gpt-5.6-sol',
-    name: 'GPT-5.6 Sol',
-    provider: 'OpenAI',
+    id: 'openai/gpt-5.6-sol', name: 'GPT-5.6 Sol', provider: 'OpenAI',
     description: 'OpenAI model for complex professional work, coding, and agentic workflows.',
-    tags: ['2nd Latest', 'Flagship', 'Coding'],
-    contextWindow: '1.05M',
-    fallback: 'groq',
+    tags: ['2nd Latest', 'Flagship', 'Coding'], contextWindow: '1.05M', fallback: 'groq',
   },
   {
-    id: 'anthropic/claude-fable-5.1',
-    name: 'Claude Fable 5.1',
-    provider: 'Claude',
+    id: 'anthropic/claude-fable-5.1', name: 'Claude Fable 5.1', provider: 'Claude',
     description: 'Anthropic model for coding, knowledge work, and long-running agentic tasks.',
-    tags: ['Latest', 'Coding', 'Knowledge Work'],
-    contextWindow: '1M',
-    fallback: 'groq',
+    tags: ['Latest', 'Coding', 'Knowledge Work'], contextWindow: '1M', fallback: 'groq',
   },
   {
-    id: 'anthropic/claude-opus-5',
-    name: 'Claude Opus 5',
-    provider: 'Claude',
+    id: 'anthropic/claude-opus-5', name: 'Claude Opus 5', provider: 'Claude',
     description: 'Anthropic model for demanding reasoning and professional workloads.',
-    tags: ['2nd Latest', 'Reasoning', 'Premium'],
-    contextWindow: '1M',
-    fallback: 'groq',
+    tags: ['2nd Latest', 'Reasoning', 'Premium'], contextWindow: '1M', fallback: 'groq',
   },
   {
-    id: 'openai/gpt-oss-120b',
-    name: 'GPT-OSS 120B',
-    provider: 'Groq',
+    id: 'openai/gpt-oss-120b', name: 'GPT-OSS 120B', provider: 'Groq',
     description: 'Open-weight 120B model served through Groq for fast inference and reasoning workloads.',
-    tags: ['Latest', 'Fast', 'Open-weight'],
-    contextWindow: '131K',
-    fallback: 'groq',
+    tags: ['Latest', 'Fast', 'Open-weight'], contextWindow: '131K', fallback: 'groq',
   },
   {
-    id: 'openai/gpt-oss-20b',
-    name: 'GPT-OSS 20B',
-    provider: 'Groq',
+    id: 'openai/gpt-oss-20b', name: 'GPT-OSS 20B', provider: 'Groq',
     description: 'Smaller GPT-OSS model served through Groq for high-speed, cost-sensitive workloads.',
-    tags: ['2nd Latest', 'Very Fast', 'Cost-effective'],
-    contextWindow: '131K',
-    fallback: 'groq',
+    tags: ['2nd Latest', 'Very Fast', 'Cost-effective'], contextWindow: '131K', fallback: 'groq',
   },
 ]
 
@@ -68,26 +44,17 @@ export const PRICING = {
   'openai/gpt-oss-20b': { input: 0.000075, output: 0.0003 },
 }
 
-// Use Groq for judging so the comparison page can still score responses without OpenRouter credits.
 export const JUDGE_MODEL = 'openai/gpt-oss-20b'
 
 export const PASSWORD_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
 
+// Only the metrics that are useful when making a model decision.
 export const METRICS = [
-  { id: 'latency', label: 'Response Time', category: 'Speed', format: 's', suffix: 's' },
-  { id: 'msPerOutputToken', label: 'ms per Output Token', category: 'Speed', format: 'ms', suffix: 'ms' },
-  { id: 'throughput', label: 'Throughput', category: 'Speed', format: 'number', suffix: 'tok/s' },
-  { id: 'inputTokens', label: 'Input Tokens', category: 'Tokens', format: 'number', suffix: '' },
-  { id: 'outputTokens', label: 'Output Tokens', category: 'Tokens', format: 'number', suffix: '' },
-  { id: 'totalTokens', label: 'Total Tokens', category: 'Tokens', format: 'number', suffix: '' },
-  { id: 'tokenRatio', label: 'Token Ratio (Out/In)', category: 'Tokens', format: 'ratio', suffix: '' },
-  { id: 'totalCost', label: 'Total Cost', category: 'Cost', format: 'currency', suffix: '' },
-  { id: 'inputCost', label: 'Input Cost', category: 'Cost', format: 'currency', suffix: '' },
-  { id: 'outputCost', label: 'Output Cost', category: 'Cost', format: 'currency', suffix: '' },
-  { id: 'costPer1kOutput', label: 'Cost per 1K Output Tokens', category: 'Cost', format: 'currency', suffix: '' },
-  { id: 'charCount', label: 'Character Count', category: 'Text', format: 'number', suffix: '' },
-  { id: 'wordCount', label: 'Word Count', category: 'Text', format: 'number', suffix: '' },
-  { id: 'outputTokensPerSec', label: 'Output Tokens/sec', category: 'Speed', format: 'number', suffix: '/s' },
+  { id: 'latency', label: 'Response Time', category: 'Performance', format: 's', suffix: 's' },
+  { id: 'totalTokens', label: 'Total Tokens', category: 'Usage', format: 'number', suffix: '' },
+  { id: 'totalCost', label: 'Estimated Cost', category: 'Cost', format: 'currency', suffix: '' },
+  { id: 'outputTokensPerSec', label: 'Output Speed', category: 'Performance', format: 'number', suffix: ' tok/s' },
+  { id: 'qualityScore', label: 'Quality Score', category: 'Quality', format: 'score', suffix: '/10' },
 ]
 
 export const METRIC_IDS = METRICS.map((m) => m.id)
