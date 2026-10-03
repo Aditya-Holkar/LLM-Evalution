@@ -1,9 +1,10 @@
 import { createContext, useContext, useReducer, useCallback, useEffect } from 'react'
-import { METRIC_IDS, MODELS } from '../config/constants'
+import { METRICS, MODELS } from '../config/constants'
 
 const AppContext = createContext(null)
 const STORAGE_KEY = 'llm-eval-state'
-const DEFAULT_MODELS = ['openrouter/free', 'deepseek/deepseek-v4-flash-0731:free', 'qwen/qwen3.8-27b:free', 'nvidia/nemotron-3.5-lightning:free']
+const METRIC_IDS = METRICS.map((metric) => metric.id)
+const DEFAULT_MODELS = ['openrouter/free', 'nvidia/nemotron-3-ultra-550b-a55b:free', 'gemini-2.5-flash-lite', 'openai/gpt-oss-120b']
 
 function loadState() {
   try {
@@ -26,15 +27,18 @@ function saveState(state) {
 }
 
 const savedState = loadState()
-const validMetrics = new Set(METRIC_IDS)\nconst validModels = new Set(MODELS.map((model) => model.id))
+const validMetrics = new Set(METRIC_IDS)
+const validModels = new Set(MODELS.map((model) => model.id))
 const migratedMetrics = Array.isArray(savedState.selectedMetrics)
   ? savedState.selectedMetrics.filter((id) => validMetrics.has(id))
   : METRIC_IDS
 
+const migratedModels = Array.isArray(savedState.selectedModels)
+  ? savedState.selectedModels.filter((id) => validModels.has(id))
+  : DEFAULT_MODELS
+
 const initialState = {
-  selectedModels: Array.isArray(savedState.selectedModels) && savedState.selectedModels.length
-    ? savedState.selectedModels
-    : DEFAULT_MODELS,
+  selectedModels: migratedModels.length ? migratedModels : DEFAULT_MODELS,
   results: [],
   isEvaluating: false,
   selectedMetrics: migratedMetrics.length ? migratedMetrics : METRIC_IDS,
@@ -42,9 +46,7 @@ const initialState = {
 }
 
 initialState.selectedMetrics = migratedMetrics.length ? migratedMetrics : METRIC_IDS
-initialState.selectedModels = Array.isArray(savedState.selectedModels) && savedState.selectedModels.length
-  ? savedState.selectedModels
-  : DEFAULT_MODELS
+initialState.selectedModels = migratedModels.length ? migratedModels : DEFAULT_MODELS
 
 function reducer(state, action) {
   switch (action.type) {
