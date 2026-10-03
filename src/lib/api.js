@@ -75,7 +75,7 @@ export async function callModel(model, prompt) {
     'NVIDIA NIM': 'nvidia-nim',
   }
   const provider = providerMap[model.provider] || 'openrouter'
-  const target = model.id.replace(/^hf\//, '').replace(/^cloudflare\//, '').replace(/^nvidia\//, '')
+  const target = model.id.replace(/^(hf|cloudflare|nvidia|google)\//, '')
   const data = await proxyFetch(provider, target, prompt, { maxTokens: 1536, reasoningEffort: 'low' })
   const parsed = parseResponse(data)
   return { ...parsed, latency: data._localLatency || (performance.now() - start), fallback: false }
