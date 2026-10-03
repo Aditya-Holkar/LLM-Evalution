@@ -103,40 +103,38 @@ function parseJudgeJson(text) {
 
 function buildJudgePrompt(response, userPrompt) {
   return 'You are the audit evaluator for an AI model comparison dashboard.\n' +
-    'Evaluate ONLY the response below against the original user prompt.\n' +
-    'Score every metric from 1-10: accuracy, clarity, completeness, coding, reasoning, research, finance, accounting.\n' +
-    'Use the same 1-10 scale for every response. Judge the actual answer, not the model reputation.\n' +
-    'Return ONLY valid JSON in exactly this shape: {"scores":[{"model":"MODEL_NAME","accuracy":0,"clarity":0,"completeness":0,"coding":0,"reasoning":0,"research":0,"finance":0,"accounting":0}]}\n' +
+    'Analyze ONLY this model response against the original user prompt.\n' +
+    'Score every metric independently from 1-10: accuracy, clarity, completeness, coding, reasoning, research, finance, accounting.\n' +
+    'Do not judge the model reputation. Judge only the actual response.\n' +
+    'If a metric is not directly relevant, still score how well the response handles that dimension rather than returning null.\n' +
+    'Return ONLY valid JSON: {\"scores\":[{\"modelId\":\"MODEL_ID\",\"accuracy\":1,\"clarity\":1,\"completeness\":1,\"coding\":1,\"reasoning\":1,\"research\":1,\"finance\":1,\"accounting\":1}]}\n' +
+    'All values must be numbers between 1 and 10.\n\n' +
     'Original user prompt:\n' + userPrompt + '\n\n' +
-    'Model: ' + response.modelName + '\n' +
-    'Response:\n' + response.text.slice(0, 5000);
+    'Model ID: ' + response.modelId + '\n' +
+    'Model name: ' + response.modelName + '\n' +
+    'Response:\n' + response.text.slice(0, 6000);
 }
 
 export async function judgeResponses(responses, userPrompt) {
   if (!responses.length) return [];
 
-  const prompt = 'You are the audit evaluator for an AI model comparison dashboard.\n' +
-    'Evaluate ONLY the responses supplied below against the original user prompt.\n' +
-    'Score every response from 1-10 on accuracy, clarity, completeness, coding, reasoning, research, finance, accounting.\n' +
-    'Judge the actual response, not the model reputation.\n' +
-    'Return ONLY valid JSON in exactly this shape: {"scores":[{"model":"MODEL_NAME","accuracy":0,"clarity":0,"completeness":0,"coding":0,"reasoning":0,"research":0,"finance":0,"accounting":0}]}\n\n' +
-    'Original user prompt:\n' + userPrompt + '\n\n' +
-    responses.map((r, i) => `Response ${i + 1} (${r.modelName}):\n${r.text.slice(0, 2500)}`).join('\n\n');
-
-  try {
-    const data = await proxyFetch('groq', JUDGE_MODEL, prompt, { maxTokens: 1400, reasoningEffort: 'low', jsonMode: true });
-    const parsed = parseJudgeJson(data.choices?.[0]?.message?.content);
-    if (Array.isArray(parsed?.scores) && parsed.scores.length) return parsed.scores;
-  } catch (error) {
-    console.warn('Batch audit failed, retrying per response:', error);
-  }
-
   const settled = await Promise.allSettled(responses.map(async (response) => {
-    const data = await proxyFetch('groq', JUDGE_MODEL, buildJudgePrompt(response, userPrompt), { maxTokens: 650, reasoningEffort: 'low', jsonMode: true });
+    const data = await proxyFetch('groq', JUDGE_MODEL, buildJudgePrompt(response, userPrompt), {
+      maxTokens: 900,
+      reasoningEffort: 'low',
+      jsonMode: true,
+    });
     const parsed = parseJudgeJson(data.choices?.[0]?.message?.content);
     const score = Array.isArray(parsed?.scores) ? parsed.scores[0] : null;
-    if (!score) throw new Error('Invalid audit score format');
-    return score;
+    if (!score) throw new Error('Audit judge returned no score');
+    return {
+      modelId: response.modelId,
+      model: response.modelName,
+      ...score,
+    };
   }));
-  return settled.filter((item) => item.status === 'fulfilled').map((item) => item.value);
+
+  return settled
+    .filter((item) => item.status === 'fulfilled')
+    .map((item) => item.value);
 }

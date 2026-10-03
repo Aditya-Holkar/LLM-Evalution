@@ -29,7 +29,7 @@ function saveState(state) {
 
 const savedState = loadState()
 const validMetrics = new Set(METRIC_IDS)
-const allowedProviders = new Set(['NVIDIA NIM', 'Cohere', 'Google AI', 'Groq', 'Hugging Face', 'Mistral', 'SiliconFlow'])
+const allowedProviders = new Set(['NVIDIA NIM', 'Cohere', 'Google AI', 'Groq', 'Hugging Face', 'Mistral', 'SiliconFlow', 'Cerebras', 'SambaNova', 'OpenRouter'])
 const validModels = new Set(MODELS.map((model) => model.id))
 const migratedMetrics = Array.isArray(savedState.selectedMetrics)
   ? savedState.selectedMetrics.filter((id) => validMetrics.has(id))
@@ -72,6 +72,7 @@ function reducer(state, action) {
     }
     case 'START_EVALUATION': return { ...state, isEvaluating: true, results: [] }
     case 'SET_RESULTS': return { ...state, results: action.payload, isEvaluating: false, triesUsed: state.triesUsed + 1 }
+    case 'UPDATE_RESULTS': return { ...state, results: action.payload }
     case 'CLEAR_RESULTS': return { ...state, results: [], isEvaluating: false }
     case 'UNLOCK': return { ...state, isUnlocked: true }
     case 'VOTE': return { ...state, manualVotes: { ...state.manualVotes, [action.modelId]: action.vote } }
@@ -89,6 +90,7 @@ export function AppProvider({ children }) {
   const setAvailableModels = useCallback((models) => dispatch({ type: 'SET_AVAILABLE_MODELS', models }), [])
   const startEvaluation = useCallback(() => dispatch({ type: 'START_EVALUATION' }), [])
   const setResults = useCallback((results) => dispatch({ type: 'SET_RESULTS', payload: results }), [])
+  const updateResults = useCallback((results) => dispatch({ type: 'UPDATE_RESULTS', payload: results }), [])
   const clearResults = useCallback(() => dispatch({ type: 'CLEAR_RESULTS' }), [])
   const unlock = useCallback(() => dispatch({ type: 'UNLOCK' }), [])
   const vote = useCallback((modelId, vote) => dispatch({ type: 'VOTE', modelId, vote }), [])
@@ -112,6 +114,7 @@ export function AppProvider({ children }) {
       setAvailableModels,
       startEvaluation,
       setResults,
+      updateResults,
       clearResults,
       unlock,
       vote,

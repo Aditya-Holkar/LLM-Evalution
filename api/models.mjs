@@ -5,6 +5,10 @@ const SOURCES = [
   { provider: 'Mistral', envKey: 'MISTRAL_API_KEY', url: 'https://api.mistral.ai/v1/models', country: 'France' },
   { provider: 'Cohere', envKey: 'COHERE_API_KEY', url: 'https://api.cohere.com/v1/models?endpoint=chat&page_size=1000', country: 'Canada', cohere: true },
   { provider: 'SiliconFlow', envKey: 'SILICONFLOW_API_KEY', url: 'https://api.siliconflow.cn/v1/models?sub_type=chat', country: 'China' },
+  { provider: 'Hugging Face', envKey: 'HF_TOKEN', url: 'https://router.huggingface.co/v1/models', country: 'Global' },
+  { provider: 'Cerebras', envKey: 'CEREBRAS_API_KEY', url: 'https://api.cerebras.ai/v1/models', country: 'USA' },
+  { provider: 'SambaNova', envKey: 'SAMBANOVA_API_KEY', url: 'https://api.sambanova.ai/v1/models', country: 'USA' },
+  { provider: 'OpenRouter', envKey: 'OPENROUTER_API_KEY', url: 'https://openrouter.ai/api/v1/models', country: 'Global' },
 ];
 
 function normalizeModel(source, item) {

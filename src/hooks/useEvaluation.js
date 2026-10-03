@@ -86,7 +86,7 @@ function buildRecommendation(results, task, priority) {
 }
 
 export function useEvaluation() {
-  const { selectedModels, availableModels, startEvaluation, setResults } = useApp()
+  const { selectedModels, availableModels, startEvaluation, setResults, updateResults } = useApp()
   const [perModelStatus, setPerModelStatus] = useState({})
 
   const evaluate = useCallback(async (prompt, priority = 'balanced') => {
@@ -101,25 +101,38 @@ export function useEvaluation() {
       if (item.status === 'fulfilled') {
         setPerModelStatus((prev) => ({ ...prev, [model.id]: 'success' }))
         const res = item.value
-        return { modelId: model.id, modelName: model.name, text: res.text, fallback: false, fallbackModel: null, fallbackReason: null, metrics: computeMetrics(res, model), error: null, ...emptyScores }
+        return { modelId: model.id, modelName: model.name, text: res.text, fallback: false, fallbackModel: null, fallbackReason: null, metrics: computeMetrics(res, model), error: null, auditStatus: 'analyzing', ...emptyScores }
       }
       setPerModelStatus((prev) => ({ ...prev, [model.id]: 'error' }))
-      return { modelId: model.id, modelName: model.name, text: '', fallback: false, fallbackModel: null, metrics: computeMetrics({ latency: 0, inputTokens: 0, outputTokens: 0, text: '' }, model), error: item.reason?.message || 'Unknown model error', ...emptyScores }
+      return { modelId: model.id, modelName: model.name, text: '', fallback: false, fallbackModel: null, metrics: computeMetrics({ latency: 0, inputTokens: 0, outputTokens: 0, text: '' }, model), error: item.reason?.message || 'Unknown model error', auditStatus: 'error', ...emptyScores }
     })
 
     const successful = results.filter((r) => !r.error && r.text)
-    if (successful.length > 1) {
-      const scores = await judgeResponses(successful)
+    results.evaluationMeta = { task, priority, recommendation: null }
+    setResults(results)
+
+    if (successful.length) {
+      const scores = await judgeResponses(successful, prompt)
+      const scoredIds = new Set()
       for (const score of scores) {
-        const match = results.find((r) => r.modelName === score.model)
+        const match = results.find((r) => r.modelId === score.modelId)
         if (!match) continue
-        for (const key of ['accuracy', 'clarity', 'completeness', 'coding', 'reasoning', 'research', 'finance', 'accounting']) match[key] = Number(score[key]) || 0
+        scoredIds.add(match.modelId)
+        for (const key of ['accuracy', 'clarity', 'completeness', 'coding', 'reasoning', 'research', 'finance', 'accounting']) {
+          const value = Number(score[key])
+          match[key] = Number.isFinite(value) ? Math.max(1, Math.min(10, value)) : 0
+        }
         match.metrics.qualityScore = Number(((match.accuracy + match.clarity + match.completeness) / 3).toFixed(1))
+        match.auditStatus = match.metrics.qualityScore > 0 ? 'complete' : 'error'
+        updateResults([...results])
+      }
+      for (const match of successful) {
+        if (!scoredIds.has(match.modelId)) match.auditStatus = 'error'
       }
     }
 
     results.evaluationMeta = { task, priority, recommendation: buildRecommendation(results, task, priority) }
-    setResults(results)
+    updateResults([...results])
   }, [selectedModels, availableModels, startEvaluation, setResults])
 
   return { evaluate, perModelStatus }
