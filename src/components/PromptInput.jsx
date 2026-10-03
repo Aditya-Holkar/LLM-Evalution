@@ -71,8 +71,6 @@ export default function PromptInput() {
               <div className="text-xs font-semibold text-muted-foreground">Web-hosted models & providers</div>
               <div className="text-[10px] text-muted-foreground">Free tiers / free endpoints are marked</div>
             </div>
-              <div className="text-[10px] text-muted-foreground">OpenRouter free endpoints · rate limited</div>
-            </div>
             <div className="flex flex-wrap gap-2">
               {webModels.map((model) => {
                 const selected = selectedModels.includes(model.id)
