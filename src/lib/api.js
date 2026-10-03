@@ -73,6 +73,10 @@ export async function callModel(model, prompt) {
     'Hugging Face': 'hugging-face',
     'Cloudflare AI': 'cloudflare-ai',
     'NVIDIA NIM': 'nvidia-nim',
+    Mistral: 'mistral',
+    Cerebras: 'cerebras',
+    Cohere: 'cohere',
+    SambaNova: 'sambanova',
   }
   const provider = providerMap[model.provider] || 'openrouter'
   const target = model.id.replace(/^(hf|cloudflare|nvidia|google)\//, '')
