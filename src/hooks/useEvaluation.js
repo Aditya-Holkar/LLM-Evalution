@@ -55,7 +55,8 @@ function buildRecommendation(results, task, priority) {
   const successful = results.filter((r) => !r.error && r.text)
   if (!successful.length) return null
   const weights = priorityWeights[priority] || priorityWeights.balanced
-  const qualityValues = successful.map((r) => r.metrics.qualityScore || 0)
+  const auditMetrics = ['accuracy', 'clarity', 'completeness', 'coding', 'reasoning', 'research', 'finance', 'accounting']
+  const qualityValues = successful.map((r) => auditMetrics.reduce((sum, key) => sum + (Number(r[key]) || 0), 0) / auditMetrics.length)
   const speedValues = successful.map((r) => r.metrics.latency || 0)
   const costValues = successful.map((r) => r.metrics.totalCost || 0)
   const taskKey = task.id === 'creative' ? 'clarity' : task.id === 'general' ? 'accuracy' : task.id
@@ -122,7 +123,7 @@ export function useEvaluation() {
           const value = Number(score[key])
           match[key] = Number.isFinite(value) ? Math.max(1, Math.min(10, value)) : 0
         }
-        match.metrics.qualityScore = Number(((match.accuracy + match.clarity + match.completeness) / 3).toFixed(1))
+        match.metrics.qualityScore = Number((['accuracy', 'clarity', 'completeness', 'coding', 'reasoning', 'research', 'finance', 'accounting'].reduce((sum, key) => sum + match[key], 0) / 8).toFixed(1))
         match.auditStatus = match.metrics.qualityScore > 0 ? 'complete' : 'error'
         updateResults([...results])
       }
@@ -133,7 +134,7 @@ export function useEvaluation() {
 
     results.evaluationMeta = { task, priority, recommendation: buildRecommendation(results, task, priority) }
     updateResults([...results])
-  }, [selectedModels, availableModels, startEvaluation, setResults])
+  }, [selectedModels, availableModels, startEvaluation, setResults, updateResults])
 
   return { evaluate, perModelStatus }
 }
