@@ -18,13 +18,40 @@ A React + Vite dashboard for comparing LLM responses side-by-side. Select multip
 
 The current catalog includes OpenAI, Claude, and Groq comparison models. Model metadata and configured price estimates live in `src/config/constants.js`, while requests are routed through the configured provider adapters in `api/proxy.mjs`.
 
-### Claude Fable 5.1
+### Free provider catalog
 
-The dashboard uses the real OpenRouter model ID `anthropic/claude-fable-5.1`. If `ANTHROPIC_API_KEY` is configured on the server, Claude requests can use Anthropic's native Messages API with the native model ID `claude-fable-5-1`; otherwise the exact same Fable 5.1 model is requested through OpenRouter. There is no GPT/Groq model substitution.
+The evaluator supports multiple independent web-hosted providers so you are not locked to one gateway. The current free/free-credit connectors are:
 
-OpenRouter can route the same Fable model across its available providers. If the OpenRouter account has insufficient credits and no Anthropic key is configured, the dashboard reports that exact Fable error instead of silently returning another model's answer.
+- OpenRouter free endpoints
+- Groq free-plan models
+- Google Gemini free tier
+- Hugging Face Inference Providers monthly free credits
+- Cloudflare Workers AI account allocation
+- NVIDIA Build free endpoints
+- Mistral Studio Free mode
+- Cerebras free/trial inference access
+- Cohere free trial API keys
+- SambaNova introductory free credits
 
-> Pricing values in the UI are project estimates. Provider pricing can change, so verify current provider rates before production budgeting.
+Free access is quota/rate limited and can change. The UI treats all of these as zero-cost for evaluation accounting; it does not mean unlimited usage.
+
+### Environment variables
+
+Set only the providers you have keys for. The proxy checks server-side variables and never exposes them to the browser.
+
+```text
+OPENROUTER_API_KEY=...
+GROQ_API_KEY=...
+GOOGLE_API_KEY=...
+HF_TOKEN=...
+CLOUDFLARE_API_TOKEN=...
+CLOUDFLARE_ACCOUNT_ID=...
+NVIDIA_API_KEY=...
+MISTRAL_API_KEY=...
+CEREBRAS_API_KEY=...
+COHERE_API_KEY=...
+SAMBANOVA_API_KEY=...
+```
 
 ## Tech stack
 
