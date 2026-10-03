@@ -3,6 +3,10 @@ const PROVIDER_CONFIG = {
   'hugging-face': { url: 'https://router.huggingface.co/v1/chat/completions', envKey: 'HF_TOKEN' },
   'cloudflare-ai': { url: 'https://api.cloudflare.com/client/v4/accounts', envKey: 'CLOUDFLARE_API_TOKEN' },
   'nvidia-nim': { url: 'https://integrate.api.nvidia.com/v1/chat/completions', envKey: 'NVIDIA_API_KEY' },
+  mistral: { url: 'https://api.mistral.ai/v1/chat/completions', envKey: 'MISTRAL_API_KEY' },
+  cerebras: { url: 'https://api.cerebras.ai/v1/chat/completions', envKey: 'CEREBRAS_API_KEY' },
+  cohere: { url: 'https://api.cohere.com/v2/chat', envKey: 'COHERE_API_KEY' },
+  sambanova: { url: 'https://api.sambanova.ai/v1/chat/completions', envKey: 'SAMBANOVA_API_KEY' },
   openrouter: { url: 'https://openrouter.ai/api/v1/chat/completions', envKey: 'OPENROUTER_API_KEY' },
   groq: { url: 'https://api.groq.com/openai/v1/chat/completions', envKey: 'GROQ_API_KEY' },
   anthropic: { url: 'https://api.anthropic.com/v1/messages', envKey: 'ANTHROPIC_API_KEY' },
@@ -106,6 +110,19 @@ export default async function handler(req, res) {
       const result = await callGoogle(key, model, prompt, maxTokens)
       if (result.error) return res.status(result.error.status || 502).json(result.error)
       return res.status(200).json(result.data)
+    }
+
+    if (provider === 'cohere') {
+      const key = getKey('COHERE_API_KEY')
+      if (!key) return res.status(500).json({ error: 'Missing API key for COHERE_API_KEY', provider })
+      const response = await fetch('https://api.cohere.com/v2/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], max_tokens: maxTokens }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) return res.status(response.status).json({ error: data.message || data.error || response.statusText, provider, detail: data })
+      return res.status(200).json({ choices: [{ message: { content: data.message?.content?.filter?.((x) => x.type === 'text').map?.((x) => x.text).join('') || data.message?.content?.[0]?.text || '' } }], usage: { prompt_tokens: data.usage?.tokens?.input_tokens || 0, completion_tokens: data.usage?.tokens?.output_tokens || 0 } })
     }
 
     if (provider === 'cloudflare-ai') {
