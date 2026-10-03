@@ -1,7 +1,47 @@
 import { JUDGE_MODEL } from '#/config/constants'
 
 async function proxyFetch(provider, model, prompt, options = {}) {
-  const res = await fetch('/api/proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider, model, prompt, maxTokens: options.maxTokens || 1024, reasoningEffort: options.reasoningEffort || 'low', jsonMode: !!options.jsonMode }) })
+  if (provider === 'ollama') {
+    const start = performance.now()
+    let res
+    try {
+      res = await fetch('http://localhost:11434/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: prompt }],
+          stream: false,
+          options: { num_predict: options.maxTokens || 1536 },
+        }),
+      })
+    } catch {
+      throw new Error('Ollama is not reachable. Install/start Ollama and run the selected model locally.')
+    }
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(`Ollama: ${data.error || res.statusText}`)
+    return {
+      choices: [{ message: { content: data.message?.content || '' } }],
+      usage: {
+        prompt_tokens: data.prompt_eval_count || 0,
+        completion_tokens: data.eval_count || 0,
+      },
+      _localLatency: performance.now() - start,
+    }
+  }
+
+  const res = await fetch('/api/proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      provider,
+      model,
+      prompt,
+      maxTokens: options.maxTokens || 1024,
+      reasoningEffort: options.reasoningEffort || 'low',
+      jsonMode: !!options.jsonMode,
+    }),
+  })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
     const detail = data.detail ? ` (${data.detail})` : ''
@@ -26,21 +66,20 @@ function parseResponse(data) {
 
 export async function callModel(model, prompt) {
   const start = performance.now()
-  // Claude models use the OpenRouter route in the UI. The server proxy can use
-  // a native Anthropic key when configured, but it always calls the exact Claude model.
-  const provider = model.provider === 'Groq' ? 'groq' : 'openrouter'
-  const data = await proxyFetch(provider, model.id, prompt, { maxTokens: 1536, reasoningEffort: 'low' })
-  return { ...parseResponse(data), latency: performance.now() - start, fallback: false }
+  const provider = model.provider === 'Groq' ? 'groq' : model.provider === 'Ollama' ? 'ollama' : 'openrouter'
+  const target = model.provider === 'Ollama' ? model.localModel : model.id
+  const data = await proxyFetch(provider, target, prompt, { maxTokens: 1536, reasoningEffort: 'low' })
+  const parsed = parseResponse(data)
+  return { ...parsed, latency: data._localLatency || (performance.now() - start), fallback: false }
 }
 
 export async function judgeResponses(responses) {
-  const prompt = `You are the audit evaluator for an AI model comparison dashboard.
-Evaluate ONLY the responses supplied below for the user's prompt.
-Score every response from 1-10 on coding, reasoning, research, finance, accounting, accuracy, clarity, completeness.
-Judge the actual response: correctness, relevance, instruction-following, useful detail, and technical quality. Do not score based on the model's reputation.
-Return a JSON object with one property named scores. scores must be an array of objects, each containing exactly: model, accuracy, clarity, completeness, coding, reasoning, research, finance, accounting.
-
-${responses.map((r, i) => `Response ${i + 1} (${r.modelName}):\n${r.text.slice(0, 3500)}`).join('\n\n')}`
+  const prompt = 'You are the audit evaluator for an AI model comparison dashboard.\n' +
+    'Evaluate ONLY the responses supplied below for the user prompt.\n' +
+    'Score every response from 1-10 on coding, reasoning, research, finance, accounting, accuracy, clarity, completeness.\n' +
+    'Judge the actual response: correctness, relevance, instruction-following, useful detail, and technical quality. Do not score based on the model reputation.\n' +
+    'Return JSON with one property named scores. scores is an array containing model, accuracy, clarity, completeness, coding, reasoning, research, finance, accounting.\n\n' +
+    responses.map((r, i) => `Response ${i + 1} (${r.modelName}):\n${r.text.slice(0, 3500)}`).join('\n\n')
 
   try {
     const data = await proxyFetch('groq', JUDGE_MODEL, prompt, { maxTokens: 900, reasoningEffort: 'low', jsonMode: true })
