@@ -77,9 +77,11 @@ export async function callModel(model, prompt) {
     Cerebras: 'cerebras',
     Cohere: 'cohere',
     SambaNova: 'sambanova',
+    Routeway: 'routeway',
+    SiliconFlow: 'siliconflow',
   }
   const provider = providerMap[model.provider] || 'openrouter'
-  const target = model.id.replace(/^(hf|cloudflare|nvidia|google)\//, '')
+  const target = (model.apiModel || model.id).replace(/^(hf|cloudflare|nvidia|google)\//, '')
   const data = await proxyFetch(provider, target, prompt, { maxTokens: 1536, reasoningEffort: 'low' })
   const parsed = parseResponse(data)
   return { ...parsed, latency: data._localLatency || (performance.now() - start), fallback: false }

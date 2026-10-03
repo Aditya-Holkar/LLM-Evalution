@@ -1,17 +1,18 @@
 import { useState, useCallback } from 'react'
-import { MODELS } from '../config/constants'
 import { callModel, judgeResponses } from '../lib/api'
-import { calculateCost } from '../lib/pricing'
 import { useApp } from '../context/AppContext'
 
-function computeMetrics(res, modelId) {
+function computeMetrics(res, model) {
+  const modelId = model.id
+  const rates = model.pricing || { input: 0, output: 0 }
+  const calculateDynamicCost = (input, output) => (input / 1000000) * Number(rates.input || 0) + (output / 1000000) * Number(rates.output || 0)
   const latency = res.latency || 0
   const inputTokens = res.inputTokens || 0
   const outputTokens = res.outputTokens || 0
   const totalTokens = inputTokens + outputTokens
-  const totalCost = calculateCost(modelId, inputTokens, outputTokens)
-  const inputCost = calculateCost(modelId, inputTokens, 0)
-  const outputCost = calculateCost(modelId, 0, outputTokens)
+  const totalCost = calculateDynamicCost(inputTokens, outputTokens)
+  const inputCost = calculateDynamicCost(inputTokens, 0)
+  const outputCost = calculateDynamicCost(0, outputTokens)
   return { latency: latency / 1000, msPerOutputToken: outputTokens > 0 ? latency / outputTokens : 0, throughput: latency > 0 ? totalTokens / (latency / 1000) : 0, inputTokens, outputTokens, totalTokens, tokenRatio: inputTokens > 0 ? outputTokens / inputTokens : 0, totalCost, inputCost, outputCost, costPer1kOutput: outputTokens > 0 ? (outputCost / outputTokens) * 1000 : 0, charCount: res.text?.length || 0, wordCount: res.text ? res.text.trim().split(/\s+/).length : 0, outputTokensPerSec: latency > 0 ? outputTokens / (latency / 1000) : 0, qualityScore: 0 }
 }
 
@@ -85,11 +86,11 @@ function buildRecommendation(results, task, priority) {
 }
 
 export function useEvaluation() {
-  const { selectedModels, startEvaluation, setResults } = useApp()
+  const { selectedModels, availableModels, startEvaluation, setResults } = useApp()
   const [perModelStatus, setPerModelStatus] = useState({})
 
   const evaluate = useCallback(async (prompt, priority = 'balanced') => {
-    const modelsToEval = MODELS.filter((m) => selectedModels.includes(m.id))
+    const modelsToEval = availableModels.filter((m) => selectedModels.includes(m.id))
     if (!modelsToEval.length) return
     startEvaluation()
     setPerModelStatus(Object.fromEntries(modelsToEval.map((m) => [m.id, 'loading'])))
@@ -100,10 +101,10 @@ export function useEvaluation() {
       if (item.status === 'fulfilled') {
         setPerModelStatus((prev) => ({ ...prev, [model.id]: 'success' }))
         const res = item.value
-        return { modelId: model.id, modelName: model.name, text: res.text, fallback: false, fallbackModel: null, fallbackReason: null, metrics: computeMetrics(res, model.id), error: null, ...emptyScores }
+        return { modelId: model.id, modelName: model.name, text: res.text, fallback: false, fallbackModel: null, fallbackReason: null, metrics: computeMetrics(res, model), error: null, ...emptyScores }
       }
       setPerModelStatus((prev) => ({ ...prev, [model.id]: 'error' }))
-      return { modelId: model.id, modelName: model.name, text: '', fallback: false, fallbackModel: null, metrics: computeMetrics({ latency: 0, inputTokens: 0, outputTokens: 0, text: '' }, model.id), error: item.reason?.message || 'Unknown model error', ...emptyScores }
+      return { modelId: model.id, modelName: model.name, text: '', fallback: false, fallbackModel: null, metrics: computeMetrics({ latency: 0, inputTokens: 0, outputTokens: 0, text: '' }, model), error: item.reason?.message || 'Unknown model error', ...emptyScores }
     })
 
     const successful = results.filter((r) => !r.error && r.text)
@@ -119,7 +120,7 @@ export function useEvaluation() {
 
     results.evaluationMeta = { task, priority, recommendation: buildRecommendation(results, task, priority) }
     setResults(results)
-  }, [selectedModels, startEvaluation, setResults])
+  }, [selectedModels, availableModels, startEvaluation, setResults])
 
   return { evaluate, perModelStatus }
 }

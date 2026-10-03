@@ -22,6 +22,7 @@ function saveState(state) {
       manualVotes: state.manualVotes,
       selectedMetrics: state.selectedMetrics,
       selectedModels: state.selectedModels,
+      availableModels: state.availableModels || MODELS,
     }))
   } catch {}
 }
@@ -39,6 +40,7 @@ const migratedModels = Array.isArray(savedState.selectedModels)
 
 const initialState = {
   selectedModels: migratedModels.length ? migratedModels : DEFAULT_MODELS,
+  availableModels: MODELS,
   results: [],
   isEvaluating: false,
   selectedMetrics: migratedMetrics.length ? migratedMetrics : METRIC_IDS,
@@ -50,6 +52,7 @@ initialState.selectedModels = migratedModels.length ? migratedModels : DEFAULT_M
 
 function reducer(state, action) {
   switch (action.type) {
+    case 'SET_AVAILABLE_MODELS': return { ...state, availableModels: action.models }
     case 'SELECT_MODEL': {
       const selectedModels = state.selectedModels.includes(action.id)
         ? state.selectedModels.filter((m) => m !== action.id)
@@ -72,6 +75,7 @@ export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState)
   useEffect(() => { saveState(state) }, [state.triesUsed, state.isUnlocked, state.manualVotes, state.selectedMetrics, state.selectedModels])
   const selectModel = useCallback((id) => dispatch({ type: 'SELECT_MODEL', id }), [])
+  const setAvailableModels = useCallback((models) => dispatch({ type: 'SET_AVAILABLE_MODELS', models }), [])
   const startEvaluation = useCallback(() => dispatch({ type: 'START_EVALUATION' }), [])
   const setResults = useCallback((results) => dispatch({ type: 'SET_RESULTS', payload: results }), [])
   const clearResults = useCallback(() => dispatch({ type: 'CLEAR_RESULTS' }), [])
@@ -93,6 +97,7 @@ export function AppProvider({ children }) {
       manualVotes: state.manualVotes,
       selectedMetrics: state.selectedMetrics,
       selectModel,
+      setAvailableModels,
       startEvaluation,
       setResults,
       clearResults,

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Send, Loader2, Check, ChevronDown } from 'lucide-react'
 import { useApp } from '#/context/AppContext'
 import { useEvaluation } from '#/hooks/useEvaluation'
@@ -15,10 +15,24 @@ export default function PromptInput() {
   const [prompt, setPrompt] = useState('')
   const [priority, setPriority] = useState('balanced')
   const [showTemplates, setShowTemplates] = useState(true)
-  const { selectedModels, selectModel, isEvaluating } = useApp()
+  const { selectedModels, selectModel, isEvaluating, availableModels, setAvailableModels } = useApp()
   const { evaluate } = useEvaluation()
 
-  const webModels = MODELS.filter((m) => m.provider !== 'Ollama')
+  const webModels = availableModels.filter((m) => m.provider !== 'Ollama')
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/models')
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (cancelled || !data?.models?.length) return
+        const merged = [...MODELS, ...data.models]
+        const unique = Array.from(new Map(merged.map((model) => [model.provider + '::' + (model.apiModel || model.id), model])).values())
+        setAvailableModels(unique)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [setAvailableModels])
 
   const handleEvaluate = () => {
     if (!prompt.trim() || selectedModels.length === 0 || isEvaluating) return
@@ -69,9 +83,9 @@ export default function PromptInput() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="text-xs font-semibold text-muted-foreground">Web-hosted models & providers</div>
-              <div className="text-[10px] text-muted-foreground">Free tiers / free endpoints are marked</div>
+              <div className="text-[10px] text-muted-foreground">Live provider catalogs are loaded when keys are configured</div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 max-h-72 overflow-y-auto pr-1">
               {webModels.map((model) => {
                 const selected = selectedModels.includes(model.id)
                 return (
@@ -99,7 +113,7 @@ export default function PromptInput() {
             </button>
           </div>
         </div>
-        <p className="text-[11px] text-muted-foreground mt-3">Tip: Ctrl/Cmd + Enter to evaluate. Free web models are served through OpenRouter and may have rate limits.</p>
+        <p className="text-[11px] text-muted-foreground mt-3">Tip: Ctrl/Cmd + Enter to evaluate. Provider catalogs are refreshed on page load; availability, pricing, and rate limits come from each provider.</p>
       </div>
     </section>
   )
