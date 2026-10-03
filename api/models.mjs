@@ -1,52 +1,75 @@
 const SOURCES = [
   { provider: 'Groq', envKey: 'GROQ_API_KEY', url: 'https://api.groq.com/openai/v1/models', country: 'USA' },
+  { provider: 'Google AI', envKey: 'GOOGLE_API_KEY', url: 'https://generativelanguage.googleapis.com/v1beta/models', country: 'USA', queryKey: true },
+  { provider: 'NVIDIA NIM', envKey: 'NVIDIA_API_KEY', url: 'https://integrate.api.nvidia.com/v1/models', country: 'Global' },
+  { provider: 'Mistral', envKey: 'MISTRAL_API_KEY', url: 'https://api.mistral.ai/v1/models', country: 'France' },
+  { provider: 'Cohere', envKey: 'COHERE_API_KEY', url: 'https://api.cohere.com/v1/models?endpoint=chat&page_size=1000', country: 'Canada', cohere: true },
+  { provider: 'SiliconFlow', envKey: 'SILICONFLOW_API_KEY', url: 'https://api.siliconflow.cn/v1/models?sub_type=chat', country: 'China' },
+  { provider: 'Hugging Face', envKey: 'HF_TOKEN', url: 'https://router.huggingface.co/v1/models', country: 'Global' },
+  { provider: 'Cerebras', envKey: 'CEREBRAS_API_KEY', url: 'https://api.cerebras.ai/v1/models', country: 'USA' },
+  { provider: 'SambaNova', envKey: 'SAMBANOVA_API_KEY', url: 'https://api.sambanova.ai/v1/models', country: 'USA' },
+  { provider: 'OpenRouter', envKey: 'OPENROUTER_API_KEY', url: 'https://openrouter.ai/api/v1/models', country: 'Global' },
 ];
 
 function normalizeModel(source, item) {
   const rawId = item.id || item.name;
-  if (!rawId || !rawId.startsWith('openai/gpt-oss-')) return null;
-  const allowed = new Set(['openai/gpt-oss-120b', 'openai/gpt-oss-20b']);
-  if (!allowed.has(rawId)) return null;
-  const id = rawId;
+  if (!rawId) return null;
+  const id = `${source.provider}::${rawId}`;
+  const price = item.pricing || {};
+  const input = Number(price.prompt ?? price.input ?? 0);
+  const output = Number(price.completion ?? price.output ?? 0);
+  const isFree = input === 0 && output === 0;
+  const chatCapable = source.provider !== 'Mistral' || item.capabilities?.completion_chat !== false;
+  if (!chatCapable) return null;
   return {
     id,
-    name: item.name || rawId,
+    name: item.name || rawId.split('/').pop() || rawId,
     provider: source.provider,
-    description: item.description || 'OpenAI GPT-OSS model served through Groq.',
+    description: item.description || `${source.provider} hosted model discovered from its live model catalog.`,
     apiModel: rawId,
-    tags: ['Hosted', 'Reasoning'],
-    contextWindow: String(item.context_length || 131072),
+    tags: [isFree ? 'Free' : 'Hosted', source.provider],
+    contextWindow: String(item.context_length || item.max_context_length || item.contextWindow || '—'),
     country: source.country,
     dynamic: true,
-    pricing: { input: Number(item.pricing?.prompt || 0), output: Number(item.pricing?.completion || 0) },
+    pricing: { input, output },
   };
 }
 
 async function fetchSource(source) {
   const key = process.env[source.envKey];
   if (!key) return { provider: source.provider, configured: false, models: [] };
-  const response = await fetch(source.url, { headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' } });
+  const headers = { Authorization: `Bearer ${key}`, Accept: 'application/json' };
+  const url = source.queryKey ? `${source.url}?key=${encodeURIComponent(key)}` : source.url;
+  const response = await fetch(url, { headers });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) return { provider: source.provider, configured: true, models: [], error: data?.error?.message || data?.message || response.statusText };
-  const models = (Array.isArray(data) ? data : (data.data || [])).map((item) => normalizeModel(source, item)).filter(Boolean);
-  const fallback = [
-    { id: 'openai/gpt-oss-120b', name: 'GPT-OSS 120B', context_length: 131072 },
-    { id: 'openai/gpt-oss-20b', name: 'GPT-OSS 20B', context_length: 131072 },
-  ];
-  for (const item of fallback) {
-    if (!models.some((model) => model.id === item.id)) models.push(normalizeModel(source, item));
+  const raw = Array.isArray(data) ? data : (data.data || data.models || []);
+  const models = raw.map((item) => normalizeModel(source, item)).filter(Boolean);
+  if (source.provider === 'Cohere' && !models.some((model) => model.apiModel === 'command-a-plus-05-2026')) {
+    models.push(normalizeModel(source, {
+      id: 'command-a-plus-05-2026',
+      name: 'Command A+',
+      description: 'Cohere Command A+ served through the Cohere API.',
+      context_length: 128000,
+      pricing: { prompt: 0, completion: 0 },
+    }));
   }
-  return { provider: source.provider, configured: true, models };
+  models.sort((a, b) => Number(!(a.tags || []).includes('Free')) - Number(!(b.tags || []).includes('Free')) || a.name.localeCompare(b.name));
+  return { provider: source.provider, configured: true, models: models.slice(0, 250) };
 }
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-  const result = await fetchSource(SOURCES[0]).catch((error) => ({ provider: 'Groq', configured: true, models: [], error: error.message }));
+  const settled = await Promise.allSettled(SOURCES.map(fetchSource));
+  const providers = settled.map((item, index) => item.status === 'fulfilled'
+    ? item.value
+    : { provider: SOURCES[index].provider, configured: true, models: [], error: item.reason?.message || 'Catalog unavailable' });
+  const models = providers.flatMap((provider) => provider.models);
   return res.status(200).json({
     refreshedAt: new Date().toISOString(),
-    providers: [result],
-    models: result.models || [],
-    count: (result.models || []).length,
+    providers,
+    models,
+    count: models.length,
   });
 }

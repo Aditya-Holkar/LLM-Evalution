@@ -7,6 +7,13 @@ export const PASSWORD_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a8
 export const MODELS = [
   { id: 'openai/gpt-oss-120b', name: 'GPT-OSS 120B', provider: 'Groq', description: 'OpenAI open-weight reasoning model served through Groq.', tags: ['Hosted', 'Reasoning', 'Fast'], contextWindow: '131K', country: 'USA' },
   { id: 'openai/gpt-oss-20b', name: 'GPT-OSS 20B', provider: 'Groq', description: 'Smaller OpenAI open-weight reasoning model served through Groq.', tags: ['Hosted', 'Reasoning', 'Very Fast'], contextWindow: '131K', country: 'USA' },
+  { id: 'qwen/qwen3.8-27b', name: 'Qwen 3.8 27B', provider: 'Groq', description: 'Qwen model served through Groq.', tags: ['Hosted', 'Open-weight'], contextWindow: '131K', country: 'China' },
+  { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite', provider: 'Google AI', description: 'Google Gemini model served through the Gemini API.', tags: ['Hosted', 'Fast', 'Multimodal'], contextWindow: '1M', country: 'USA' },
+  { id: 'deepseek-ai/DeepSeek-V3-0324', name: 'DeepSeek V3 0324', provider: 'Hugging Face', description: 'DeepSeek model served through Hugging Face Inference Providers.', tags: ['Hosted', 'Open-weight', 'Reasoning'], contextWindow: '163K', country: 'China' },
+  { id: 'deepseek-v4.1-flash', name: 'DeepSeek V4.1 Flash', provider: 'NVIDIA NIM', description: 'DeepSeek model served through NVIDIA NIM.', tags: ['Hosted', 'Reasoning'], contextWindow: '1M', country: 'Global' },
+  { id: 'glm-5-3-flash', name: 'GLM 5.3 Flash', provider: 'NVIDIA NIM', description: 'GLM model served through NVIDIA NIM.', tags: ['Hosted', 'Reasoning'], contextWindow: '1M', country: 'Global' },
+  { id: 'mistral-small-latest', name: 'Mistral Small', provider: 'Mistral', description: 'Mistral Small served through the Mistral API.', tags: ['Hosted', 'Fast'], contextWindow: '128K', country: 'France' },
+  { id: 'command-a-plus-05-2026', name: 'Command A+', provider: 'Cohere', description: 'Cohere Command model served through the Cohere API.', tags: ['Hosted', 'Multilingual'], contextWindow: '128K', country: 'Canada' },
 ]
 
 export const METRICS = [

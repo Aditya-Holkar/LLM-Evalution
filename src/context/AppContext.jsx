@@ -4,7 +4,7 @@ import { METRICS, MODELS } from '../config/constants'
 const AppContext = createContext(null)
 const STORAGE_KEY = 'llm-eval-state'
 const METRIC_IDS = METRICS.map((metric) => metric.id)
-const DEFAULT_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b']
+const DEFAULT_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'gemini-2.5-flash-lite', 'mistral-small-latest']
 
 function loadState() {
   try {
@@ -29,7 +29,7 @@ function saveState(state) {
 
 const savedState = loadState()
 const validMetrics = new Set(METRIC_IDS)
-const allowedProviders = new Set(['Groq'])
+const allowedProviders = new Set(['NVIDIA NIM', 'Cohere', 'Google AI', 'Groq', 'Hugging Face', 'Mistral', 'SiliconFlow', 'Cerebras', 'SambaNova', 'OpenRouter'])
 const validModels = new Set(MODELS.map((model) => model.id))
 const migratedMetrics = Array.isArray(savedState.selectedMetrics)
   ? savedState.selectedMetrics.filter((id) => validMetrics.has(id))

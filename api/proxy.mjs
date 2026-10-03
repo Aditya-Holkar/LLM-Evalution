@@ -54,7 +54,8 @@ async function callProvider(provider, apiKey, model, prompt, maxTokens, reasonin
 
   const body = { model, messages: [{ role: 'user', content: prompt }], max_tokens: maxTokens }
   if (reasoningEffort && provider === 'groq') body.reasoning_effort = reasoningEffort
-  if (jsonMode && provider === 'groq') body.response_format = { type: 'json_object' }
+  if (jsonSchema && provider === 'groq') body.response_format = jsonSchema
+  else if (jsonMode && provider === 'groq') body.response_format = { type: 'json_object' }
   const response = await fetch(config.url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`, ...(provider === 'openrouter' ? { 'HTTP-Referer': process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '', 'X-Title': 'LLM Evalution' } : {}) }, body: JSON.stringify(body) })
   const data = await response.json().catch(() => ({}))
   return { response, data }
@@ -98,7 +99,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
-  const { provider, model, prompt, maxTokens = 1024, reasoningEffort = 'low', jsonMode = false } = await parseBody(req)
+  const { provider, model, prompt, maxTokens = 1024, reasoningEffort = 'low', jsonMode = false, jsonSchema = null } = await parseBody(req)
   if (!provider || !model || !prompt) return res.status(400).json({ error: 'Missing provider, model, or prompt' })
   const config = PROVIDER_CONFIG[provider]
   if (!config) return res.status(400).json({ error: `Unknown provider: ${provider}` })

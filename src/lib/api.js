@@ -40,6 +40,7 @@ async function proxyFetch(provider, model, prompt, options = {}) {
       maxTokens: options.maxTokens || 1024,
       reasoningEffort: options.reasoningEffort || 'low',
       jsonMode: !!options.jsonMode,
+      jsonSchema: options.jsonSchema || null,
     }),
   })
   const data = await res.json().catch(() => ({}))
@@ -122,7 +123,31 @@ export async function judgeResponses(responses, userPrompt) {
     const data = await proxyFetch('groq', JUDGE_MODEL, buildJudgePrompt(response, userPrompt), {
       maxTokens: 900,
       reasoningEffort: 'low',
-      jsonMode: true,
+      jsonMode: false,
+      jsonSchema: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'model_audit_scores',
+          strict: true,
+          schema: {
+            type: 'object',
+            properties: {
+              scores: {
+                type: 'object',
+                properties: {
+                  accuracy: { type: 'number' }, clarity: { type: 'number' }, completeness: { type: 'number' },
+                  coding: { type: 'number' }, reasoning: { type: 'number' }, research: { type: 'number' },
+                  finance: { type: 'number' }, accounting: { type: 'number' }
+                },
+                required: ['accuracy','clarity','completeness','coding','reasoning','research','finance','accounting'],
+                additionalProperties: false
+              }
+            },
+            required: ['scores'],
+            additionalProperties: false
+          }
+        }
+      },
     });
     const parsed = parseJudgeJson(data.choices?.[0]?.message?.content);
     const score = Array.isArray(parsed?.scores) ? parsed.scores[0] : null;
