@@ -29,7 +29,7 @@ function saveState(state) {
 
 const savedState = loadState()
 const validMetrics = new Set(METRIC_IDS)
-const allowedProviders = new Set(['NVIDIA NIM', 'Routeway', 'Cohere', 'Google AI', 'Groq', 'Hugging Face', 'Mistral', 'SiliconFlow'])
+const allowedProviders = new Set(['NVIDIA NIM', 'Cohere', 'Google AI', 'Groq', 'Hugging Face', 'Mistral', 'SiliconFlow'])
 const validModels = new Set(MODELS.map((model) => model.id))
 const migratedMetrics = Array.isArray(savedState.selectedMetrics)
   ? savedState.selectedMetrics.filter((id) => validMetrics.has(id))

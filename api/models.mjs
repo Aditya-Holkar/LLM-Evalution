@@ -4,7 +4,6 @@ const SOURCES = [
   { provider: 'NVIDIA NIM', envKey: 'NVIDIA_API_KEY', url: 'https://integrate.api.nvidia.com/v1/models', country: 'Global' },
   { provider: 'Mistral', envKey: 'MISTRAL_API_KEY', url: 'https://api.mistral.ai/v1/models', country: 'France' },
   { provider: 'Cohere', envKey: 'COHERE_API_KEY', url: 'https://api.cohere.com/v1/models?endpoint=chat&page_size=1000', country: 'Canada', cohere: true },
-  { provider: 'Routeway', envKey: 'ROUTEWAY_API_KEY', url: 'https://api.routeway.ai/v1/models', country: 'Global' },
   { provider: 'SiliconFlow', envKey: 'SILICONFLOW_API_KEY', url: 'https://api.siliconflow.cn/v1/models?sub_type=chat', country: 'China' },
 ];
 
@@ -42,6 +41,15 @@ async function fetchSource(source) {
   if (!response.ok) return { provider: source.provider, configured: true, models: [], error: data?.error?.message || data?.message || response.statusText };
   const raw = Array.isArray(data) ? data : (data.data || data.models || []);
   const models = raw.map((item) => normalizeModel(source, item)).filter(Boolean);
+  if (source.provider === 'Cohere' && !models.some((model) => model.apiModel === 'command-a-plus-05-2026')) {
+    models.push(normalizeModel(source, {
+      id: 'command-a-plus-05-2026',
+      name: 'Command A+',
+      description: 'Cohere Command A+ served through the Cohere API.',
+      context_length: 128000,
+      pricing: { prompt: 0, completion: 0 },
+    }));
+  }
   models.sort((a, b) => Number(!(a.tags || []).includes('Free')) - Number(!(b.tags || []).includes('Free')) || a.name.localeCompare(b.name));
   return { provider: source.provider, configured: true, models: models.slice(0, 250) };
 }
