@@ -18,8 +18,8 @@ export default function PromptInput() {
   const { selectedModels, selectModel, isEvaluating } = useApp()
   const { evaluate } = useEvaluation()
 
-  const localModels = MODELS.filter((m) => m.provider === 'Ollama')
-  const hostedModels = MODELS.filter((m) => m.provider !== 'Ollama')
+  const openModels = MODELS.filter((m) => m.provider === 'OpenRouter')
+  const hostedModels = MODELS.filter((m) => m.provider === 'Groq')
 
   const handleEvaluate = () => {
     if (!prompt.trim() || selectedModels.length === 0 || isEvaluating) return
@@ -36,8 +36,8 @@ export default function PromptInput() {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-4">
           <p className="text-xs uppercase tracking-[0.18em] text-primary font-bold">LLM Evalution</p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-card-foreground mt-1">Compare hosted + local open models</h1>
-          <p className="text-sm text-muted-foreground mt-1">Test the same prompt across commercial APIs and no-signup local models.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-card-foreground mt-1">Compare hosted + web-hosted open models</h1>
+          <p className="text-sm text-muted-foreground mt-1">Test the same prompt across hosted APIs and free/open models served from the web.</p>
         </div>
 
         <div className="mb-3 rounded-xl border border-border bg-muted/20 p-3">
@@ -86,11 +86,11 @@ export default function PromptInput() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <div className="text-xs font-semibold text-muted-foreground">Local open-source / open-weight · no signup</div>
-              <div className="text-[10px] text-muted-foreground">Requires Ollama + downloaded model</div>
+              <div className="text-xs font-semibold text-muted-foreground">Web-hosted open-source / open-weight</div>
+              <div className="text-[10px] text-muted-foreground">OpenRouter free endpoints · rate limited</div>
             </div>
             <div className="flex flex-wrap gap-2">
-              {localModels.map((model) => {
+              {openModels.map((model) => {
                 const selected = selectedModels.includes(model.id)
                 return (
                   <button key={model.id} type="button" onClick={() => selectModel(model.id)} disabled={isEvaluating} title={`${model.country} · ${model.description}`} className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${selected ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}>
@@ -117,7 +117,7 @@ export default function PromptInput() {
             </button>
           </div>
         </div>
-        <p className="text-[11px] text-muted-foreground mt-3">Tip: Ctrl/Cmd + Enter to evaluate. Local Ollama calls stay on your machine.</p>
+        <p className="text-[11px] text-muted-foreground mt-3">Tip: Ctrl/Cmd + Enter to evaluate. Free web models are served through OpenRouter and may have rate limits.</p>
       </div>
     </section>
   )
