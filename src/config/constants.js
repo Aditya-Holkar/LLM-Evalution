@@ -22,8 +22,6 @@ export const MODELS = [
   { id: 'DeepSeek-V3.1', name: 'DeepSeek V3.1', provider: 'SambaNova', description: 'SambaNova Cloud developer access includes free introductory credits, subject to current limits.', tags: ['Free Credit', 'Open-weight', 'Reasoning'], contextWindow: '128K', country: 'USA' },
 ]
 
-export const PRICING = Object.fromEntries(MODELS.map((model) => [model.id, { input: 0, output: 0 }]))
-
 export const METRICS = [
   { id: 'accuracy', label: 'Accuracy' },
   { id: 'clarity', label: 'Clarity' },
@@ -48,23 +46,4 @@ export const PROMPT_TEMPLATES = [
   { id: 'instruction', label: 'Instruction', prompt: 'Follow these instructions exactly. Return ONLY a JSON array of five objects with the keys id, priority, category, and reason. Do not add markdown or commentary. Classify these support tickets: 1) "The student cannot log in after changing the password." 2) "The timetable shows two lectures in the same room at 10 AM." 3) "The attendance percentage for student 1042 is 68%, but the faculty register says 74%." 4) "The fee receipt PDF downloads with the wrong student name." 5) "The dashboard takes more than 8 seconds to load." Use priority values High, Medium, or Low. Use categories Authentication, Timetable, Attendance, Fees, or Performance. Assign each ticket one priority and one category, and give a one-sentence reason.' },
 ]
 
-export const PRICING = {
-  'openrouter/free': { input: 0, output: 0 },
-  'nvidia/nemotron-3-ultra-550b-a55b:free': { input: 0, output: 0 },
-  'nvidia/nemotron-3.5-lightning:free': { input: 0, output: 0 },
-  'deepseek/deepseek-v4-flash-0731:free': { input: 0, output: 0 },
-  'qwen/qwen3.8-27b:free': { input: 0, output: 0 },
-  'z-ai/glm-5.2:free': { input: 0, output: 0 },
-  'inclusionai/ling-3.0-flash:free': { input: 0, output: 0 },
-  'inclusionai/ling-3.0-flash-sante:free': { input: 0, output: 0 },
-  'inclusionai/ling-3.0-flash-fin:free': { input: 0, output: 0 },
-  'google/gemma-4-26b-a4b-it:free': { input: 0, output: 0 },
-  'thinkingmachines/inkling:free': { input: 0, output: 0 },
-  'thinkingmachines/inkling-small:free': { input: 0, output: 0 },
-  'openai/gpt-5.6-sol': { input: 0.002, output: 0.01 },
-  'openai/gpt-5.6-terra': { input: 0.002, output: 0.012 },
-  'anthropic/claude-fable-5.1': { input: 0.01, output: 0.05 },
-  'anthropic/claude-opus-5': { input: 0.005, output: 0.025 },
-  'openai/gpt-oss-120b': { input: 0.00015, output: 0.0006 },
-  'openai/gpt-oss-20b': { input: 0.000075, output: 0.0003 },
-}
+export const PRICING = Object.fromEntries(MODELS.map((model) => [model.id, { input: 0, output: 0 }]))
