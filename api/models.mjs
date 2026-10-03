@@ -1,11 +1,8 @@
 const SOURCES = [
-  { provider: 'OpenRouter', envKey: 'OPENROUTER_API_KEY', url: 'https://openrouter.ai/api/v1/models', country: 'Global' },
   { provider: 'Groq', envKey: 'GROQ_API_KEY', url: 'https://api.groq.com/openai/v1/models', country: 'USA' },
   { provider: 'Google AI', envKey: 'GOOGLE_API_KEY', url: 'https://generativelanguage.googleapis.com/v1beta/models', country: 'USA', queryKey: true },
   { provider: 'NVIDIA NIM', envKey: 'NVIDIA_API_KEY', url: 'https://integrate.api.nvidia.com/v1/models', country: 'Global' },
   { provider: 'Mistral', envKey: 'MISTRAL_API_KEY', url: 'https://api.mistral.ai/v1/models', country: 'France' },
-  { provider: 'Cerebras', envKey: 'CEREBRAS_API_KEY', url: 'https://api.cerebras.ai/v1/models', country: 'USA' },
-  { provider: 'SambaNova', envKey: 'SAMBANOVA_API_KEY', url: 'https://api.sambanova.ai/v1/models', country: 'USA' },
   { provider: 'Cohere', envKey: 'COHERE_API_KEY', url: 'https://api.cohere.com/v1/models?endpoint=chat&page_size=1000', country: 'Canada', cohere: true },
   { provider: 'Routeway', envKey: 'ROUTEWAY_API_KEY', url: 'https://api.routeway.ai/v1/models', country: 'Global' },
   { provider: 'SiliconFlow', envKey: 'SILICONFLOW_API_KEY', url: 'https://api.siliconflow.cn/v1/models?sub_type=chat', country: 'China' },

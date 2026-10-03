@@ -4,7 +4,7 @@ import { METRICS, MODELS } from '../config/constants'
 const AppContext = createContext(null)
 const STORAGE_KEY = 'llm-eval-state'
 const METRIC_IDS = METRICS.map((metric) => metric.id)
-const DEFAULT_MODELS = ['openrouter/free', 'nvidia/nemotron-3-ultra-550b-a55b:free', 'gemini-2.5-flash-lite', 'openai/gpt-oss-120b']
+const DEFAULT_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'gemini-2.5-flash-lite', 'mistral-small-latest']
 
 function loadState() {
   try {
@@ -29,18 +29,23 @@ function saveState(state) {
 
 const savedState = loadState()
 const validMetrics = new Set(METRIC_IDS)
+const allowedProviders = new Set(['NVIDIA NIM', 'Routeway', 'Cohere', 'Google AI', 'Groq', 'Hugging Face', 'Mistral', 'SiliconFlow'])
 const validModels = new Set(MODELS.map((model) => model.id))
 const migratedMetrics = Array.isArray(savedState.selectedMetrics)
   ? savedState.selectedMetrics.filter((id) => validMetrics.has(id))
   : METRIC_IDS
 
+const savedAvailableModels = Array.isArray(savedState.availableModels)
+  ? savedState.availableModels.filter((model) => allowedProviders.has(model?.provider))
+  : MODELS
+
 const migratedModels = Array.isArray(savedState.selectedModels)
-  ? savedState.selectedModels.filter((id) => validModels.has(id))
+  ? savedState.selectedModels.filter((id) => validModels.has(id) || savedAvailableModels.some((model) => model.id === id))
   : DEFAULT_MODELS
 
 const initialState = {
   selectedModels: migratedModels,
-  availableModels: Array.isArray(savedState.availableModels) ? savedState.availableModels : MODELS,
+  availableModels: savedAvailableModels,
   results: [],
   isEvaluating: false,
   selectedMetrics: migratedMetrics.length ? migratedMetrics : METRIC_IDS,
@@ -49,7 +54,7 @@ const initialState = {
 
 initialState.selectedMetrics = migratedMetrics.length ? migratedMetrics : METRIC_IDS
 initialState.selectedModels = migratedModels.length ? migratedModels : DEFAULT_MODELS
-initialState.availableModels = Array.isArray(savedState.availableModels) ? savedState.availableModels : MODELS
+initialState.availableModels = savedAvailableModels
 
 function reducer(state, action) {
   switch (action.type) {
