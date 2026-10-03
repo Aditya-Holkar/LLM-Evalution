@@ -18,8 +18,7 @@ export default function PromptInput() {
   const { selectedModels, selectModel, isEvaluating } = useApp()
   const { evaluate } = useEvaluation()
 
-  const openModels = MODELS.filter((m) => m.provider === 'OpenRouter')
-  const hostedModels = MODELS.filter((m) => m.provider === 'Groq')
+  const webModels = MODELS.filter((m) => m.provider !== 'Ollama')
 
   const handleEvaluate = () => {
     if (!prompt.trim() || selectedModels.length === 0 || isEvaluating) return
@@ -69,32 +68,17 @@ export default function PromptInput() {
         <div className="mt-4 space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <div className="text-xs font-semibold text-muted-foreground">Hosted models</div>
-              <div className="text-[10px] text-muted-foreground">API key may be required</div>
+              <div className="text-xs font-semibold text-muted-foreground">Web-hosted models & providers</div>
+              <div className="text-[10px] text-muted-foreground">Free tiers / free endpoints are marked</div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {hostedModels.map((model) => {
-                const selected = selectedModels.includes(model.id)
-                return (
-                  <button key={model.id} type="button" onClick={() => selectModel(model.id)} disabled={isEvaluating} title={model.description} className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${selected ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}>
-                    {selected && <Check className="w-3 h-3 inline mr-1" />}{model.name}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-xs font-semibold text-muted-foreground">Web-hosted open-source / open-weight</div>
               <div className="text-[10px] text-muted-foreground">OpenRouter free endpoints · rate limited</div>
             </div>
             <div className="flex flex-wrap gap-2">
-              {openModels.map((model) => {
+              {webModels.map((model) => {
                 const selected = selectedModels.includes(model.id)
                 return (
                   <button key={model.id} type="button" onClick={() => selectModel(model.id)} disabled={isEvaluating} title={`${model.country} · ${model.description}`} className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${selected ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}>
-                    {selected && <Check className="w-3 h-3 inline mr-1" />}{model.name} <span className="opacity-60">· {model.country}</span>
+                    {selected && <Check className="w-3 h-3 inline mr-1" />}{model.name} <span className="opacity-60">· {model.provider} · {model.country}</span>
                   </button>
                 )
               })}
