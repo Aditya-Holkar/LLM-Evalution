@@ -1,12 +1,40 @@
 const PROVIDER_CONFIG = {
+  'google-ai': { url: 'https://generativelanguage.googleapis.com/v1beta/models', envKey: 'GOOGLE_API_KEY' },
+  'hugging-face': { url: 'https://router.huggingface.co/v1/chat/completions', envKey: 'HF_TOKEN' },
+  'cloudflare-ai': { url: 'https://api.cloudflare.com/client/v4/accounts', envKey: 'CLOUDFLARE_API_TOKEN' },
+  'nvidia-nim': { url: 'https://integrate.api.nvidia.com/v1/chat/completions', envKey: 'NVIDIA_API_KEY' },
   openrouter: { url: 'https://openrouter.ai/api/v1/chat/completions', envKey: 'OPENROUTER_API_KEY' },
   groq: { url: 'https://api.groq.com/openai/v1/chat/completions', envKey: 'GROQ_API_KEY' },
   anthropic: { url: 'https://api.anthropic.com/v1/messages', envKey: 'ANTHROPIC_API_KEY' },
 }
 
 function parseBody(req) { return new Promise((resolve) => { if (req.body) return resolve(req.body); let body = ''; req.on('data', (chunk) => { body += chunk }); req.on('end', () => { try { resolve(JSON.parse(body)) } catch { resolve({}) } }); req.on('error', () => resolve({})) }) }
-function getKey(envKey) { return process.env[envKey] || process.env[`VITE_${envKey}`] }
+function getKey(envKey) { return process.env[envKey] }
 function isCreditError(data) { return /more credits|fewer max_tokens|can only afford|insufficient credits|credit balance/i.test(data?.error?.message || '') }
+async function callGoogle(apiKey, model, prompt, maxTokens) {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: maxTokens } }),
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) return { error: providerError('google-ai', data, response) }
+  return { data: { choices: [{ message: { content: data.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '' } }], usage: { prompt_tokens: data.usageMetadata?.promptTokenCount || 0, completion_tokens: data.usageMetadata?.candidatesTokenCount || 0 } }, provider: 'google-ai' }
+}
+
+async function callCloudflare(apiToken, model, prompt, maxTokens) {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
+  if (!accountId) return { error: { error: 'Cloudflare AI: Missing CLOUDFLARE_ACCOUNT_ID', provider: 'cloudflare-ai' } }
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiToken}` },
+    body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], max_tokens: maxTokens }),
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) return { error: providerError('cloudflare-ai', data, response) }
+  return { data: { choices: [{ message: { content: data.result?.response || data.result?.text || '' } }] }, provider: 'cloudflare-ai' }
+}
+
 
 async function callProvider(provider, apiKey, model, prompt, maxTokens, reasoningEffort, jsonMode) {
   const config = PROVIDER_CONFIG[provider]
@@ -72,6 +100,22 @@ export default async function handler(req, res) {
   if (!config) return res.status(400).json({ error: `Unknown provider: ${provider}` })
 
   try {
+    if (provider === 'google-ai') {
+      const key = getKey('GOOGLE_API_KEY')
+      if (!key) return res.status(500).json({ error: 'Missing API key for GOOGLE_API_KEY', provider })
+      const result = await callGoogle(key, model, prompt, maxTokens)
+      if (result.error) return res.status(result.error.status || 502).json(result.error)
+      return res.status(200).json(result.data)
+    }
+
+    if (provider === 'cloudflare-ai') {
+      const key = getKey('CLOUDFLARE_API_TOKEN')
+      if (!key) return res.status(500).json({ error: 'Missing API token for CLOUDFLARE_API_TOKEN', provider })
+      const result = await callCloudflare(key, model, prompt, maxTokens)
+      if (result.error) return res.status(result.error.status || 502).json(result.error)
+      return res.status(200).json(result.data)
+    }
+
     if (provider === 'openrouter' && model.startsWith('anthropic/')) {
       const result = await callClaude(model, prompt, maxTokens)
       if (result.error) return res.status(result.error.status || 502).json(result.error)
