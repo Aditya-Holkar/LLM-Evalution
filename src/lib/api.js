@@ -150,7 +150,7 @@ export async function judgeResponses(responses, userPrompt) {
       },
     });
     const parsed = parseJudgeJson(data.choices?.[0]?.message?.content);
-    const score = Array.isArray(parsed?.scores) ? parsed.scores[0] : null;
+    const score = Array.isArray(parsed?.scores) ? parsed.scores[0] : parsed?.scores;
     if (!score) throw new Error('Audit judge returned no score');
     return {
       modelId: response.modelId,
