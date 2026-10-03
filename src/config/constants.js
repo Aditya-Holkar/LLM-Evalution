@@ -2,6 +2,8 @@ export const MAX_FREE_TRIES = 3
 
 export const JUDGE_MODEL = 'openai/gpt-oss-120b'
 
+export const PASSWORD_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
+
 export const MODELS = [
   { id: 'openrouter/free', name: 'OpenRouter Free Router', provider: 'OpenRouter', description: 'Automatically routes to a currently available free OpenRouter model.', tags: ['Free', 'Auto-route', 'Open'], contextWindow: '200K', country: 'Global' },
   { id: 'nvidia/nemotron-3-ultra-550b-a55b:free', name: 'Nemotron 3 Ultra', provider: 'OpenRouter', description: 'NVIDIA open frontier reasoning model available as a free OpenRouter endpoint.', tags: ['Free', 'Reasoning', 'Open-weight'], contextWindow: '1M', country: 'USA' },
