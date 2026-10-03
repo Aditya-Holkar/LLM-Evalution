@@ -21,7 +21,23 @@ export const MODELS = [
   { id: 'openai/gpt-oss-20b', name: 'GPT-OSS 20B', provider: 'Groq', description: 'Open-weight model served through Groq for very fast inference.', tags: ['USA', 'Open-weight', 'Very Fast'], contextWindow: '131K', country: 'USA' },
 ]
 
+  { id: 'google/gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite', provider: 'Google AI', description: 'Google Gemini API free-tier model for fast general-purpose evaluation.', tags: ['Google', 'Free', 'Fast'], contextWindow: '1M', country: 'USA' },
+  { id: 'google/gemini-3.8-flash', name: 'Gemini 3.8 Flash', provider: 'Google AI', description: 'Google Gemini Flash model with a documented free API tier.', tags: ['Google', 'Free', 'Reasoning'], contextWindow: '1M', country: 'USA' },
+  { id: 'hf/deepseek-ai/DeepSeek-R1', name: 'DeepSeek R1 via Hugging Face', provider: 'Hugging Face', description: 'Hugging Face routed inference with a monthly free credit for experimentation.', tags: ['Hugging Face', 'Free Credit', 'Reasoning'], contextWindow: '163K', country: 'Global' },
+  { id: 'hf/Qwen/Qwen3-Next-80B-A3B-Instruct', name: 'Qwen3 Next 80B via Hugging Face', provider: 'Hugging Face', description: 'Hugging Face routed open-model inference for coding and reasoning.', tags: ['Hugging Face', 'Free Credit', 'China'], contextWindow: '262K', country: 'China' },
+  { id: 'cloudflare/@cf/meta/llama-3.2-1b-instruct', name: 'Llama 3.2 1B via Cloudflare', provider: 'Cloudflare AI', description: 'Workers AI model available within Cloudflare Free plan daily allocation.', tags: ['Cloudflare', 'Free', 'Small'], contextWindow: '8K', country: 'USA' },
+  { id: 'cloudflare/@cf/qwen/qwen1.5-14b-chat-awq', name: 'Qwen 1.5 14B via Cloudflare', provider: 'Cloudflare AI', description: 'Open Qwen model served by Cloudflare Workers AI.', tags: ['Cloudflare', 'Free', 'China'], contextWindow: '32K', country: 'China' },
+  { id: 'nvidia/deepseek-v4.1-flash', name: 'DeepSeek V4.1 Flash via NVIDIA', provider: 'NVIDIA NIM', description: 'NVIDIA Build free endpoint for DeepSeek V4.1 Flash.', tags: ['NVIDIA', 'Free Endpoint', 'China'], contextWindow: '1M', country: 'China' },
+  { id: 'nvidia/glm-5-3-flash', name: 'GLM 5.3 Flash via NVIDIA', provider: 'NVIDIA NIM', description: 'NVIDIA Build free endpoint for Z.ai GLM 5.3 Flash.', tags: ['NVIDIA', 'Free Endpoint', 'China'], contextWindow: '256K', country: 'China' },
 export const PRICING = {
+  'google/gemini-2.5-flash-lite': { input: 0, output: 0 },
+  'google/gemini-3.8-flash': { input: 0, output: 0 },
+  'hf/deepseek-ai/DeepSeek-R1': { input: 0, output: 0 },
+  'hf/Qwen/Qwen3-Next-80B-A3B-Instruct': { input: 0, output: 0 },
+  'cloudflare/@cf/meta/llama-3.2-1b-instruct': { input: 0, output: 0 },
+  'cloudflare/@cf/qwen/qwen1.5-14b-chat-awq': { input: 0, output: 0 },
+  'nvidia/deepseek-v4.1-flash': { input: 0, output: 0 },
+  'nvidia/glm-5-3-flash': { input: 0, output: 0 },
   'openrouter/free': { input: 0, output: 0 },
   'nvidia/nemotron-3-ultra-550b-a55b:free': { input: 0, output: 0 },
   'nvidia/nemotron-3.5-lightning:free': { input: 0, output: 0 },
