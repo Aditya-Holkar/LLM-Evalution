@@ -1,9 +1,9 @@
 import { createContext, useContext, useReducer, useCallback, useEffect } from 'react'
-import { METRIC_IDS } from '../config/constants'
+import { METRIC_IDS, MODELS } from '../config/constants'
 
 const AppContext = createContext(null)
 const STORAGE_KEY = 'llm-eval-state'
-const DEFAULT_MODELS = ['openai/gpt-5.6-sol', 'anthropic/claude-fable-5.1', 'openai/gpt-oss-120b']
+const DEFAULT_MODELS = ['openrouter/free', 'deepseek/deepseek-v4-flash-0731:free', 'qwen/qwen3.8-27b:free', 'nvidia/nemotron-3.5-lightning:free']
 
 function loadState() {
   try {
@@ -26,7 +26,7 @@ function saveState(state) {
 }
 
 const savedState = loadState()
-const validMetrics = new Set(METRIC_IDS)
+const validMetrics = new Set(METRIC_IDS)\nconst validModels = new Set(MODELS.map((model) => model.id))
 const migratedMetrics = Array.isArray(savedState.selectedMetrics)
   ? savedState.selectedMetrics.filter((id) => validMetrics.has(id))
   : METRIC_IDS
