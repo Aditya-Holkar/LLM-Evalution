@@ -66,8 +66,16 @@ function parseResponse(data) {
 
 export async function callModel(model, prompt) {
   const start = performance.now()
-  const provider = model.provider === 'Groq' ? 'groq' : model.provider === 'Ollama' ? 'ollama' : 'openrouter'
-  const target = model.provider === 'Ollama' ? model.localModel : model.id
+  const providerMap = {
+    Groq: 'groq',
+    OpenRouter: 'openrouter',
+    'Google AI': 'google-ai',
+    'Hugging Face': 'hugging-face',
+    'Cloudflare AI': 'cloudflare-ai',
+    'NVIDIA NIM': 'nvidia-nim',
+  }
+  const provider = providerMap[model.provider] || 'openrouter'
+  const target = model.id.replace(/^hf\//, '').replace(/^cloudflare\//, '').replace(/^nvidia\//, '')
   const data = await proxyFetch(provider, target, prompt, { maxTokens: 1536, reasoningEffort: 'low' })
   const parsed = parseResponse(data)
   return { ...parsed, latency: data._localLatency || (performance.now() - start), fallback: false }
