@@ -39,8 +39,8 @@ const migratedModels = Array.isArray(savedState.selectedModels)
   : DEFAULT_MODELS
 
 const initialState = {
-  selectedModels: migratedModels.length ? migratedModels : DEFAULT_MODELS,
-  availableModels: MODELS,
+  selectedModels: migratedModels,
+  availableModels: Array.isArray(savedState.availableModels) ? savedState.availableModels : MODELS,
   results: [],
   isEvaluating: false,
   selectedMetrics: migratedMetrics.length ? migratedMetrics : METRIC_IDS,
@@ -49,10 +49,11 @@ const initialState = {
 
 initialState.selectedMetrics = migratedMetrics.length ? migratedMetrics : METRIC_IDS
 initialState.selectedModels = migratedModels.length ? migratedModels : DEFAULT_MODELS
+initialState.availableModels = Array.isArray(savedState.availableModels) ? savedState.availableModels : MODELS
 
 function reducer(state, action) {
   switch (action.type) {
-    case 'SET_AVAILABLE_MODELS': return { ...state, availableModels: action.models }
+    case 'SET_AVAILABLE_MODELS': return { ...state, availableModels: Array.isArray(action.models) ? action.models : MODELS }
     case 'SELECT_MODEL': {
       const selectedModels = state.selectedModels.includes(action.id)
         ? state.selectedModels.filter((m) => m !== action.id)
@@ -73,7 +74,7 @@ function reducer(state, action) {
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState)
-  useEffect(() => { saveState(state) }, [state.triesUsed, state.isUnlocked, state.manualVotes, state.selectedMetrics, state.selectedModels])
+  useEffect(() => { saveState(state) }, [state.triesUsed, state.isUnlocked, state.manualVotes, state.selectedMetrics, state.selectedModels, state.availableModels])
   const selectModel = useCallback((id) => dispatch({ type: 'SELECT_MODEL', id }), [])
   const setAvailableModels = useCallback((models) => dispatch({ type: 'SET_AVAILABLE_MODELS', models }), [])
   const startEvaluation = useCallback(() => dispatch({ type: 'START_EVALUATION' }), [])
@@ -89,6 +90,7 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider value={{
       selectedModels: state.selectedModels,
+      availableModels: state.availableModels,
       results: state.results,
       isEvaluating: state.isEvaluating,
       triesRemaining,
@@ -116,3 +118,5 @@ export function useApp() {
   if (!ctx) throw new Error('useApp must be used within AppProvider')
   return ctx
 }
+
+export const MAX_FREE_TRIES = 3
