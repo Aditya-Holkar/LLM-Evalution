@@ -25,8 +25,11 @@ export default function PromptInput() {
     fetch('/api/models')
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
-        if (cancelled || !data?.models?.length) return
-        const merged = [...MODELS, ...data.models]
+        if (cancelled || !data?.providers) return
+        const configuredProviders = new Set(data.providers.filter((provider) => provider.configured && !provider.error).map((provider) => provider.provider))
+        const configuredStatic = MODELS.filter((model) => configuredProviders.has(model.provider))
+        const liveModels = (data.models || []).filter((model) => configuredProviders.has(model.provider))
+        const merged = [...configuredStatic, ...liveModels]
         const unique = Array.from(new Map(merged.map((model) => [model.provider + '::' + (model.apiModel || model.id), model])).values())
         setAvailableModels(unique)
       })

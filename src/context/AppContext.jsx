@@ -58,7 +58,12 @@ initialState.availableModels = savedAvailableModels
 
 function reducer(state, action) {
   switch (action.type) {
-    case 'SET_AVAILABLE_MODELS': return { ...state, availableModels: Array.isArray(action.models) ? action.models : MODELS }
+    case 'SET_AVAILABLE_MODELS': {
+      const availableModels = Array.isArray(action.models) ? action.models : MODELS
+      const availableIds = new Set(availableModels.map((model) => model.id))
+      const selectedModels = state.selectedModels.filter((id) => availableIds.has(id))
+      return { ...state, availableModels, selectedModels: selectedModels.length ? selectedModels : availableModels.slice(0, 4).map((model) => model.id) }
+    }
     case 'SELECT_MODEL': {
       const selectedModels = state.selectedModels.includes(action.id)
         ? state.selectedModels.filter((m) => m !== action.id)
